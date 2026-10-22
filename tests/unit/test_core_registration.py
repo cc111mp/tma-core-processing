@@ -96,22 +96,62 @@ def test_chunked_rgb_native_export_has_no_seams_and_uses_white_background(tmp_pa
     image = rng.integers(0, 255, (151, 179, 3), np.uint8)
     affine = np.array([[0.98, -0.08, 13.2], [0.08, 0.98, -5.6], [0, 0, 1.0]])
     transform = Transform(affine, np.eye(3), np.eye(3))
-    export_native(image, (180, 201), transform, tmp_path, chunk=64)
-    actual = tifffile.imread(tmp_path / "he-registered.tif")
     yy, xx = np.indices((180, 201), dtype=np.float64)
     source = transform.af_to_he(np.column_stack([xx.ravel(), yy.ravel()]))
-    expected = cv2.remap(
-        image,
-        source[:, 0].reshape(180, 201).astype(np.float32),
-        source[:, 1].reshape(180, 201).astype(np.float32),
-        cv2.INTER_LINEAR,
-        borderMode=cv2.BORDER_CONSTANT,
-        borderValue=(255, 255, 255),
+    # The native contract rounds GLOBAL float64 coordinates to 1/32-pixel
+    # bins. OpenCV 5's floating-map remap uses different interpolation, so
+    # calculate the four-neighbour integer-weight oracle independently.
+    quantized = np.rint(source * 32).astype(np.int64).reshape(180, 201, 2)
+    x0, y0 = quantized[..., 0] // 32, quantized[..., 1] // 32
+    fx, fy = quantized[..., 0] % 32, quantized[..., 1] % 32
+    weighted = np.zeros((180, 201, 3), np.int64)
+    for dx, wx in [(0, 32 - fx), (1, fx)]:
+        for dy, wy in [(0, 32 - fy), (1, fy)]:
+            x, y = x0 + dx, y0 + dy
+            inside = (x >= 0) & (x < image.shape[1]) & (y >= 0) & (y < image.shape[0])
+            neighbour = np.full((180, 201, 3), 255, np.int64)
+            neighbour[inside] = image[y[inside], x[inside]]
+            weighted += neighbour * (wx * wy)[..., None]
+    expected = ((weighted + 512) // 1024).astype(np.uint8)
+    expected_coverage = (
+        (source[:, 0] >= 0)
+        & (source[:, 0] <= image.shape[1] - 1)
+        & (source[:, 1] >= 0)
+        & (source[:, 1] <= image.shape[0] - 1)
+    ).reshape(180, 201)
+    previous = None
+    for chunk in [31, 64, 512]:
+        export_native(image, (180, 201), transform, tmp_path, chunk=chunk)
+        actual = tifffile.imread(tmp_path / "he-registered.tif")
+        coverage = tifffile.imread(tmp_path / "source-coverage.tif")
+        np.testing.assert_array_equal(actual, expected)
+        np.testing.assert_array_equal(coverage, expected_coverage)
+        if previous is not None:
+            np.testing.assert_array_equal(actual, previous)
+        previous = actual
+        assert np.all(actual[-1, -1] == 255)
+
+
+def test_native_sampling_preserves_global_float64_half_bin_ties_at_large_coordinates():
+    from tma_qc.backends.core_registration.transforms import sample_native
+
+    origin = 2**20
+    image = np.zeros((1, origin + 3), np.uint8)
+    image[0, origin + 1] = 128
+    half_bin = origin + 1 / 64
+    xs = np.array(
+        [
+            np.nextafter(half_bin, -np.inf),
+            half_bin,
+            np.nextafter(half_bin, np.inf),
+            origin + 3 / 64,
+        ]
     )
-    # remap's 1/32-pixel interpolation bins can differ by one bin after ROI subtraction.
-    assert np.percentile(np.abs(actual.astype(float) - expected), 99.9) <= 1
-    assert np.abs(actual.astype(float) - expected).max() <= 8
-    assert np.all(actual[-1, -1] == 255)
+    points = np.column_stack([xs, np.zeros(len(xs))])
+    actual, coverage = sample_native(image, points, (1, len(xs)), 255)
+    # Ties round to even global bins; float32 global maps lose these distinctions.
+    np.testing.assert_array_equal(actual, [[0, 0, 4, 8]])
+    assert coverage.all()
 
 
 def test_native_export_applies_local_pull_after_global_alignment(tmp_path):
