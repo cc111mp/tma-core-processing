@@ -1,0 +1,36 @@
+# One initializer is selected by registration.core_method in the main config.
+# These provisional fitting settings never certify biological correspondence.
+seed = 20261019
+threads = 2
+export_chunk = 512
+
+[matching]
+max_dimension = 1024
+rotations = [0, 90, 180, 270]
+feature_view = "gradient"
+transform = "similarity"
+max_matches = 3000
+ratio = 0.75
+ransac_view_pixels = 4.0
+min_inliers = 12
+min_inlier_fraction = 0.2
+min_hull_coverage = 0.08
+max_anisotropy = 1.4
+min_relative_scale = 0.4
+max_relative_scale = 2.5
+ambiguity_score_fraction = 0.1
+ambiguity_view_pixels = 8.0
+
+[roma]
+device = "auto"
+coarse_resolution = 560
+upsample_resolution = 864
+
+[refinement]
+backend = "none"
+# Enable bspline_mi only after installing the registration-refine extra.
+mesh_size = 6
+iterations = 50
+max_displacement_view_pixels = 12.0
+min_jacobian = 0.25
+support_taper_view_pixels = 16.0

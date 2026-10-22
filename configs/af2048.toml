@@ -1,0 +1,18 @@
+# Starting settings for raw 2048 x 2048 AF FOVs.
+# Copy this file beside your dataset and set a local SSD cache location.
+# Omitted settings use the defaults in src/tma_qc/config.py.
+
+[runtime]
+# Uncomment and edit for your workstation:
+# cache_root = "/local-ssd/tma-qc-cache"
+threads = 2
+tile_workers = 4
+decoded_cache_bytes = 536870912  # 512 MiB of decoded FOVs; 0 disables this cache
+
+[profile]
+shape = [2048, 2048]            # height, width in pixels
+dtype = "uint16"
+
+[tile_qc]
+window = 256                   # local detail window, in native pixels
+stride = 256                   # spacing between window starts, in native pixels

@@ -1,0 +1,48 @@
+# Settings for the TMA QC tools.
+# Edit this file instead of the code. Lines starting with # are notes.
+
+[layout]
+# How raw folders are named:
+#   <slide>/<core>/<lamp>/scan/<X_Y>/<image>.tiff
+core_pattern = '^[A-Z][0-9]{1,2}$'        # core folders: A1, B12 ...
+scan_folder = "scan"
+stitch_folder = "stitch"
+image_extensions = [".tif", ".tiff"]
+ignore_files = ["Thumbs.db", "desktop.ini", ".DS_Store"]
+search_depth = 3                          # how many folder levels to search for slides
+read_threads = 4                          # folders read at the same time; more can stall the NAS
+
+[grid]
+# Distance between neighbouring FOVs, in mm (measured on D049Ga01, Oct 2026).
+step_x_mm = 0.42795
+step_y_mm = 0.431063
+tolerance = 0.1          # a position may be off by 10% of a step and still count as on the grid
+# Largest scan grid one core can have. Seen so far: 7x7, 7x6, 6x6, 6x5.
+max_columns = 8
+max_rows = 8
+
+[checks]
+expect_stitch_folder = true      # CHECK if a core has no stitch/ folder
+max_time_gap_minutes = 30        # CHECK if images of one core were written this far apart.
+                                 # Only meaningful where the data was scanned: copies that do
+                                 # not keep file times (cp, some sync tools) give false CHECKs.
+                                 # Set to 0 to switch this rule off.
+# Expected slide folder name, e.g. D049Ga01_01_CQ_UV. Leave empty ('') to switch off.
+slide_name_pattern = '^[A-Za-z0-9-]+_[0-9]{2}_[A-Z]+(_[A-Z0-9]+)?$'
+
+[registration]
+# Measured on 433 registered cores (Oct 2026): normal cores have scale 0.84-0.86
+# and rotation within about 2 degrees; failed ones were far outside.
+# These limits are a first guess - tune them after looking at the overlays.
+expected_scale = 0.85        # HE pixel size relative to AF
+scale_tolerance = 0.05       # ALERT if scale differs by more than this
+max_rotation_deg = 10        # ALERT if HE is rotated more than this
+dice_alert = 0.60            # ALERT if tissue overlap (Dice) is below this
+dice_check = 0.75            # CHECK if below this
+max_residual_px = 60         # CHECK if the local shift after registration is larger
+min_matches = 10             # CHECK if fewer matched features
+
+[montage]
+tile_px = 256        # size of each core in the montage, in pixels
+read_threads = 2     # images read at the same time; more can stall the NAS
+cache_dir = ""       # where previews are remembered; empty = inside the output folder

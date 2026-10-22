@@ -1,0 +1,6 @@
+# Only needed for the image tools (make_montage.py).
+# check_transfer.py and check_registration.py need plain Python 3.11+ only.
+numpy>=1.24
+tifffile>=2024.1
+imagecodecs>=2024.1
+Pillow>=10

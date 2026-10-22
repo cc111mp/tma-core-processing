@@ -1,0 +1,5 @@
+# Advisory settings only. Every image-quality stage remains REVIEW.
+# PASS is reserved for explicit technical integrity checks.
+[qc]
+landmark_tolerance_pixels = 20.0
+minimum_landmarks = 5

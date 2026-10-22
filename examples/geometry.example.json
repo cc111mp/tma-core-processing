@@ -1,0 +1,8 @@
+{
+  "coordinate_space": "native_pixels",
+  "axes": "XY",
+  "origin": "upper_left",
+  "positions": [
+    {"id": "1", "x": 0, "y": 0}
+  ]
+}

@@ -1,0 +1,7 @@
+# Use together with your acquisition's AF preprocessing profile. These settings
+# select the integrated core fitter for explicitly declared AF–H&E section pairs.
+[registration]
+backend = "core"
+core_method = "geometry_sift"
+core_config = "core-registration.toml"
+export_aligned_he = true

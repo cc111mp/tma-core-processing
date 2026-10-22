@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TMA QC — Getting Started</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  :root { --ink: #1d1d1f; --secondary: #5e5e65; --line: #dedee3; --surface: #f5f5f7; --accent: #0066cc; }
+  body { margin: 0; background: #e8e8ed; color: var(--ink); font: 10.8pt/1.48 "Roboto", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .page { width: 210mm; height: 297mm; padding: 17mm 18mm 19mm; margin: 9mm auto; background: white; position: relative; break-after: page; }
+  .page:last-child { break-after: auto; }
+  .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 30px; color: var(--secondary); font-size: 8.1pt; }
+  .top b { color: var(--ink); font-weight: 600; }
+  h1 { font-size: 40pt; font-weight: 650; line-height: 1.05; letter-spacing: -1.8px; margin: 9px 0 18px; }
+  h2 { font-size: 27pt; font-weight: 650; line-height: 1.15; letter-spacing: -.8px; margin: 9px 0 16px; }
+  h3 { font-size: 12pt; font-weight: 600; margin: 21px 0 8px; }
+  p { margin: 10px 0; }
+  b, strong { font-weight: 600; }
+  .lead { font-size: 12pt; color: var(--secondary); line-height: 1.5; margin-bottom: 18px; }
+  .eyebrow { font-size: 9pt; color: var(--accent); font-weight: 500; margin-bottom: 8px; }
+  .foot { position: absolute; bottom: 10mm; left: 18mm; right: 18mm; display: flex; justify-content: space-between; align-items: baseline; color: var(--secondary); border-top: 1px solid var(--line); padding-top: 9px; font-size: 7.5pt; }
+  .foot span:last-child { font-variant-numeric: tabular-nums; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: .86em; overflow-wrap: anywhere; }
+  pre { margin: 13px 0; padding: 15px 16px; background: var(--surface); border: none; border-radius: 9px; font: 9pt/1.52 "DejaVu Sans Mono", monospace; white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; }
+  pre.dark { background: var(--surface); color: var(--ink); }
+  pre.small { font-size: 8.4pt; line-height: 1.47; }
+  .note, .review { background: var(--surface); border: none; border-radius: 9px; padding: 12px 16px; margin: 16px 0; font-size: 9.2pt; line-height: 1.48; }
+  .muted { color: var(--secondary); }
+  .small { font-size: 9.3pt; line-height: 1.48; }
+  .tiny { font-size: 8pt; line-height: 1.45; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 18px 0; }
+  .card { padding: 13px 0 0; border: none; border-top: 1px solid var(--line); border-radius: 0; }
+  .card h3 { margin-top: 0; }
+  .card p { margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 13px 0; font-size: 9.3pt; line-height: 1.42; table-layout: fixed; }
+  th { text-align: left; background: transparent; color: var(--secondary); font-size: 8.2pt; font-weight: 500; }
+  td, th { padding: 9px 0; vertical-align: top; border-bottom: 1px solid var(--line); }
+  td:first-child, th:first-child { width: 31%; padding-right: 18px; }
+  td:first-child { font-weight: 500; }
+  .compact td, .compact th { padding-top: 7px; padding-bottom: 7px; }
+  ul, ol { padding-left: 21px; margin: 10px 0; }
+  li { padding: 3px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  .route { display: flex; gap: 0; margin: 19px 0; align-items: stretch; counter-reset: route; }
+  .route span { flex: 1; padding: 0 12px; border-left: 1px solid var(--line); text-align: left; font-size: 9pt; line-height: 1.4; }
+  .route span:first-child { border: none; padding-left: 0; }
+  .route span::before { counter-increment: route; content: counter(route, decimal-leading-zero); display: block; font-size: 8pt; font-weight: 500; color: var(--accent); margin-bottom: 5px; }
+  .sources { font-size: 8.3pt; line-height: 1.55; }
+  .contents { display: grid; grid-template-columns: 1fr 1fr; column-gap: 25px; margin: 14px 0; }
+  .contents a { display: grid; grid-template-columns: 24px 1fr auto; align-items: baseline; gap: 5px; border-top: 1px solid var(--line); padding: 10px 0; color: var(--ink); font-size: 9.1pt; }
+  .contents .number { color: var(--accent); font-size: 8pt; }
+  .contents .pages { color: var(--secondary); font-size: 8pt; }
+  .balanced th:first-child, .balanced td:first-child { width: 50%; }
+  @media screen and (max-width: 820px) {
+    body { font-size: 16px; }
+    .page { width: calc(100% - 32px); height: auto; min-height: 0; margin: 16px; padding: 30px 25px; }
+    .foot { position: static; margin-top: 35px; }
+    .lead { font-size: 18px; }
+    .small, .note, .review, table { font-size: 14px; }
+    .tiny, .sources { font-size: 12px; }
+    pre, pre.small { font-size: 12px; overflow-x: auto; white-space: pre; overflow-wrap: normal; }
+  }
+  @media screen and (max-width: 560px) {
+    h1 { font-size: 38pt; }
+    h2 { font-size: 25pt; }
+    .grid, .contents { grid-template-columns: 1fr; }
+    .route { flex-wrap: wrap; row-gap: 16px; }
+    .route span { flex: 0 0 50%; }
+    .top { font-size: 10px; }
+  }
+  @media print { body { background: white; } .page { margin: 0; } a { text-decoration: none; } }
+</style>
+</head>
+<body>
+
+<section class="page" id="start">
+  <div class="top"><b>PhoMedics</b><span>TMA QC user guide</span></div>
+  <div class="eyebrow">From raw images to reviewed cores</div>
+  <h1>TMA QC<br>Getting started.</h1>
+  <p class="lead">Organize original images, reconstruct AF cores and register reviewed H&amp;E pairs. Follow the same workflow from a terminal or Python.</p>
+  <h3>Start with your folders</h3>
+  <pre class="dark">tma-study/
+├── raw/                       Original NAS-style AF folders
+├── he/HE_SLIDE_01/A1.tif       Original H&amp;E core image
+├── pairing/sections.csv       Reviewed section assignments
+├── manifests/                 manifest.json → paired.json
+├── geometry/                  Tile positions + held-out landmarks
+├── models/                    Frozen illumination fields
+├── configs/                   AF + research registration settings
+└── runs/run01/                acquisitions/ · pairs/ · reports/</pre>
+  <p class="small muted">This is a recommended dataset layout. The raw importer follows the hierarchy on pages 2–3; the manifest sets the locations of the other files.</p>
+  <div class="grid">
+    <div class="card"><h3>What it does</h3><p class="small">Stitches raw AF tiles into TMA core images, applies illumination correction and reviews each stage. Optional registration aligns an explicitly assigned H&amp;E core.</p></div>
+    <div class="card"><h3>What you receive</h3><p class="small">Native TIFFs, coverage maps, source checksums and HTML reports that link each result to its original images.</p></div>
+  </div>
+  <nav class="contents" aria-label="Contents">
+    <a href="#default-raw"><span class="number">01</span><span>Organize images</span><span class="pages">2–4</span></a>
+    <a href="#identity"><span class="number">02</span><span>Prepare inputs</span><span class="pages">5–7</span></a>
+    <a href="#run"><span class="number">03</span><span>Run with Python</span><span class="pages">8–9</span></a>
+    <a href="#qc-link"><span class="number">04</span><span>Review processing + QC</span><span class="pages">10–13</span></a>
+    <a href="#registration"><span class="number">05</span><span>Register H&amp;E cores</span><span class="pages">14–16</span></a>
+    <a href="#method-choices"><span class="number">06</span><span>Choose methods + settings</span><span class="pages">17–18</span></a>
+    <a href="#code-help"><span class="number">07</span><span>Find code and help</span><span class="pages">19</span></a>
+  </nav>
+  <p class="tiny muted"><b>Terms:</b> TMA = tissue microarray; AF = autofluorescence; FOV = field of view; H&amp;E = hematoxylin and eosin.</p>
+  <p class="tiny muted">Edition 5.1 · 22 October 2026 · Package 0.4.1.<br>Examples use illustrative study labels. Scientific image quality requires review.</p>
+  <div class="foot"><span>TMA QC · Getting started</span><span>1 / 19</span></div>
+</section>
+
+<section class="page" id="default-raw">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>01 · Folders</span></div>
+  <h2>Organize your raw images</h2>
+  <p class="lead">Point <code>--raw-root</code> at the folder containing the acquisition and slide folders. Keep each core and lamp setting distinct.</p>
+  <pre class="dark">raw/                              ← --raw-root points here
+└── acquisition01/
+    └── SLIDE_01_AF/
+        ├── A1/
+        │   └── middle lamp 275/
+        │       └── stitch/
+        │           ├── FOV_1.tif
+        │           ├── FOV_2.tif
+        │           └── FOV_3.tif
+        └── B2/
+            └── middle lamp 275/
+                └── stitch/
+                    ├── FOV_1.tif
+                    └── FOV_2.tif</pre>
+  <table>
+    <thead><tr><th>Folder or file</th><th>Meaning in this tutorial</th></tr></thead>
+    <tbody>
+      <tr><td><code>acquisition01/</code></td><td>Organizes one acquisition. Preserve original and repeat acquisition folders separately.</td></tr>
+      <tr><td><code>SLIDE_01_AF/</code></td><td>Source slide-folder label. The importer preserves this exact label in metadata.</td></tr>
+      <tr><td><code>A1/</code>, <code>B2/</code></td><td>TMA core positions. Labels such as A1 or B12 are recognized.</td></tr>
+      <tr><td><code>middle lamp 275/</code></td><td>The observed lamp-folder naming convention. The folder label supplies grouping information; its numeric suffix alone does not establish calibrated units or model compatibility.</td></tr>
+      <tr><td><code>stitch/</code></td><td>A candidate set of original AF tiles. In this raw hierarchy it contains tiles to stitch, not the final reconstructed core.</td></tr>
+      <tr><td><code>FOV_1.tif</code></td><td>One field of view. Numbered names such as <code>0001_0.6.099.tiff</code> are also recognized by their leading index.</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>Default image profile:</b> one 2D uint16 AF plane per selected file, 2048 × 2048 pixels. Use an explicit compatible profile for a different tile size. The importer hashes files; image-format checks happen in <code>plan</code> and <code>run</code>.</div>
+  <div class="foot"><span>TMA QC · Getting started</span><span>2 / 19</span></div>
+</section>
+
+<section class="page" id="variants">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>01 · Folders</span></div>
+  <h2>Use your existing folders</h2>
+  <p>The importer accepts project and <code>Raw</code> wrapper folders, including a repeated slide-folder name. Use the existing hierarchy when it follows these patterns.</p>
+  <h3>Repeated slide folder</h3>
+  <pre>raw/project/Raw/SLIDE_01_AF/SLIDE_01_AF/
+    A1/middle lamp 275/stitch/FOV_1.tif</pre>
+  <h3>Scan positions instead of a numbered stitch set</h3>
+  <pre>raw/acquisition01/SLIDE_01_AF/A1/middle lamp 275/
+└── scan/
+    ├── 43.59_42.35/100.tif
+    └── 44.02_42.35/100.tif</pre>
+  <h3>Core folders with no lamp level</h3>
+  <pre>raw/SLIDE_01_AF/A1/stitch_folder/FOV_1.tif
+raw/SLIDE_01_AF/A1/scan/43.59_42.35/100.tif</pre>
+  <table class="compact">
+    <thead><tr><th>What the importer sees</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>Several valid candidate sets</td><td>Prefers <code>stitch</code>, then <code>stitch_folder</code>, then an unambiguous <code>scan</code> set.</td></tr>
+      <tr><td>Numbered tile files</td><td>Orders them numerically. The indices must be contiguous and start at 0 or 1.</td></tr>
+      <tr><td>One image per scan XY folder</td><td>Retains the XY-folder identity. Acquisition sequence remains unreviewed.</td></tr>
+      <tr><td>Several images per XY folder</td><td>Leaves the core blocked for explicit Z/exposure selection if no other valid candidate set exists.</td></tr>
+      <tr><td>Empty or unresolved core</td><td>Keeps it visible with <code>blocked_reasons</code>.</td></tr>
+      <tr><td><code>stitch_folder_bg</code>, autofocus or ZIP</td><td>Counts the files in the inventory but does not select them as original raw FOVs.</td></tr>
+    </tbody>
+  </table>
+  <div class="review"><b>Scan XY labels are source metadata.</b> They are not automatically converted into native pixel positions. Geometry needs a reviewed coordinate source or the explicitly configured geometry backend.</div>
+  <p class="tiny muted">The folder importer is for raw AF acquisitions. H&amp;E inputs enter later through explicit section-pair assignments.</p>
+  <div class="foot"><span>TMA QC · Getting started</span><span>3 / 19</span></div>
+</section>
+
+<section class="page" id="paths">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>01 · Folders</span></div>
+  <h2>Choose where files live</h2>
+  <p class="lead">The code checkout, original images, processing assets and generated results serve different roles.</p>
+  <pre>code/phomedics-tma-qc/        Installed source checkout
+
+/data/tma-study/
+├── raw/                      Original AF folders from pages 2–3
+├── he/HE_SLIDE_01/A1.tif      Original H&amp;E core crop
+├── pairing/sections.csv
+├── manifests/
+│   ├── manifest.json         Reviewed AF inventory
+│   └── paired.json           AF + explicit H&amp;E assignments
+├── geometry/                 Native positions + landmarks
+├── models/group01/           flatfield.tif · darkfield.tif
+│                             model.json
+├── configs/af.toml
+├── configs/core-registration.toml
+└── runs/run01/
+
+/local-ssd/tma-qc-cache/      Writable runtime cache</pre>
+  <table>
+    <thead><tr><th>Path in the manifest</th><th>How the code resolves it</th></tr></thead>
+    <tbody>
+      <tr><td><code>raw_root</code></td><td>Use the absolute raw-input directory, such as <code>/data/tma-study/raw</code>.</td></tr>
+      <tr><td>Relative FOV <code>path</code></td><td>Under <code>raw_root</code>, for example <code>acquisition01/SLIDE_01_AF/A1/…/FOV_1.tif</code>.</td></tr>
+      <tr><td>Relative model or geometry path</td><td>Beside the manifest. From <code>manifests/manifest.json</code>, use <code>../geometry/A1.json</code> and <code>../models/group01/flatfield.tif</code>.</td></tr>
+      <tr><td>Pairing CSV asset path</td><td>Relative to <code>pairing/sections.csv</code>, such as <code>../he/HE_SLIDE_01/A1.tif</code>. <code>import-pairs</code> stores absolute asset paths in its output manifest.</td></tr>
+      <tr><td>Absolute asset path</td><td>Used directly. Update the path when moving to another machine.</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>Writable locations:</b> the manifest output, results and cache must be outside the raw archive. Set <code>runtime.cache_root</code> to local SSD. If omitted, the software default is the system temporary directory’s <code>tma-qc</code> folder; the code does not automatically choose an SSD.</div>
+  <p class="tiny"><b>Our copied NAS root:</b><br><code>/mnt/pho-nas/home/data/TMA_raw/2026</code><br>The original acquisition root is <code>/mnt/pho-nas/datacollection/TMA(Raw)/2026</code>. Use a stable, complete selected input set.</p>
+  <div class="foot"><span>TMA QC · Getting started</span><span>4 / 19</span></div>
+</section>
+
+<section class="page" id="identity">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>02 · Manifest</span></div>
+  <h2>Understand the manifest</h2>
+  <p class="lead">Users supply a raw root. The importer lists the candidate tiles and records their identities and checksums in <code>manifest.json</code>.</p>
+  <table class="compact">
+    <thead><tr><th>Field</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>dataset_id</code></td><td>The study/collection identifier.</td></tr>
+      <tr><td><code>cores[].slide</code></td><td>The assigned slide identifier. Automatically imported values use cleaned folder labels and hash suffixes.</td></tr>
+      <tr><td><code>core</code>, <code>acquisition</code>, <code>channel</code></td><td>The core position, acquisition record and AF channel assignment.</td></tr>
+      <tr><td><code>cores[].uid</code></td><td>The unique core-acquisition reference used by processing and H&amp;E pairing.</td></tr>
+      <tr><td><code>group</code></td><td>A reference to an illumination-group/model assignment.</td></tr>
+      <tr><td><code>fovs[]</code></td><td>Selected tile IDs, original paths and full source SHA256s.</td></tr>
+      <tr><td><code>positions</code></td><td>Path to native tile geometry when using the default supplied-geometry backend.</td></tr>
+      <tr><td><code>pairs[]</code></td><td>Optional AF–H&amp;E section-pair assignments.</td></tr>
+    </tbody>
+  </table>
+  <h3>Keep the original image identity</h3>
+  <pre class="small">"metadata": {
+  "source_slide_label": "SLIDE_01_AF",
+  "source_lamp_label": "middle lamp 275",
+  "source_folder": "acquisition01/SLIDE_01_AF/A1/middle lamp 275",
+  "source_FOV_set_verified": false
+}</pre>
+  <p class="small">This is an illustrative fragment, not a complete manifest. Use the generated JSON rather than recreating machine IDs by hand.</p>
+  <div class="grid">
+    <div class="card"><h3>Name hash</h3><p class="small">The short suffix on an imported ID distinguishes source labels. IDs depend on relative acquisition and lamp paths.</p></div>
+    <div class="card"><h3>File checksum</h3><p class="small">The full SHA256 binds the record to the image bytes. It is a separate value from the short ID suffix.</p></div>
+  </div>
+  <div class="review"><b>Folder labels need their acquisition meaning.</b> The importer preserves the original spelling; it does not establish a laboratory barcode, physical section identity or an AF–H&amp;E match from that spelling alone.</div>
+  <div class="foot"><span>TMA QC · Getting started</span><span>5 / 19</span></div>
+</section>
+
+<section class="page" id="import">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>02 · Manifest</span></div>
+  <h2>Create your manifest</h2>
+  <p>In an activated Python 3.11+ environment, install from the repository checkout. Run these commands in a terminal:</p>
+  <pre class="dark">python -m pip install -e '.[codecs]'
+python -m tma_qc --help</pre>
+  <p>Run the Python module against the raw root from page 2. Write the manifest outside it:</p>
+  <pre class="dark">python -m tma_qc import-folder \
+  --raw-root /data/tma-study/raw \
+  --dataset-id TMA-STUDY-01 \
+  --out /data/tma-study/manifests/manifest.json</pre>
+  <p>The importer hashes selected tiles, preserves source labels and reports candidate and blocked cores. It works directly from the folders.</p>
+  <h3>Check what was found</h3>
+  <pre class="small">python - &lt;&lt;'PY'
+import json
+from pathlib import Path
+path = Path("/data/tma-study/manifests/manifest.json")
+d = json.loads(path.read_text())
+for c in d["cores"]:
+    print(c["uid"], c["core"], len(c["fovs"]),
+          c["blocked_reasons"])
+print("Model groups:", [g["id"] for g in d["groups"]])
+PY</pre>
+  <table class="compact balanced">
+    <thead><tr><th>Generated automatically</th><th>Still needs acquisition information</th></tr></thead>
+    <tbody>
+      <tr><td>Candidate slide/core/acquisition/lamp records</td><td>Correct identity, channel and acquisition completeness</td></tr>
+      <tr><td>Tile paths, IDs and source hashes</td><td>Native geometry and any ambiguous plane selection</td></tr>
+      <tr><td>Draft illumination groups</td><td>Compatible frozen model assignments and optional H&amp;E pairs</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>A draft is a successful import.</b> Exit 0 means the JSON was generated; it may contain blocked cores. Use a new output filename to import again. Use <code>plan</code> or <code>run</code> to check processing prerequisites.</div>
+  <p class="tiny muted">Hashing reads the selected files and can take time on NAS. Read errors, symbolic links or detected source changes stop publication. Use <code>import-copy</code> to reuse a completed error-free transfer inventory.</p>
+  <div class="foot"><span>TMA QC · Getting started</span><span>6 / 19</span></div>
+</section>
+
+<section class="page" id="assets">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>03 · Processing</span></div>
+  <h2>Add tile positions and models</h2>
+  <p class="lead">The default workflow uses supplied native tile positions and frozen CIDRE illumination fields. Folder discovery prepares the image list; these assets make reconstruction executable.</p>
+  <h3>1. Add a position for each tile</h3>
+  <p class="small">Save under <code>geometry/</code> and set the core’s <code>positions</code> path in the manifest. Match every FOV ID exactly once.</p>
+  <pre>{
+  "coordinate_space": "native_pixels",
+  "axes": "XY",
+  "origin": "upper_left",
+  "positions": [
+    {"id": "1", "x": 0, "y": 0},
+    {"id": "2", "x": 1600, "y": 0}
+  ]
+}</pre>
+  <p class="small">The positions above are illustrative, not a calibration for your scanner. Current blending requires nonnegative integer native-pixel coordinates. Set <code>geometry_reviewed</code> only after review. Optional MIST estimation requires explicit grid/sequence information and a working Java/classpath setup.</p>
+  <p class="small"><b>Stage 4 checks and flags for review.</b> Geometry QC records overlap measurements and highlights the largest measured shifts in preview crops. It leaves tile positions and FOV order unchanged. Unavailable overlap measurements remain unassessed.</p>
+  <h3>2. Assign a compatible correction model</h3>
+  <pre class="small">"groups": [{
+  "id": "COPY_THE_GENERATED_GROUP_ID",
+  "flatfield": "../models/group01/flatfield.tif",
+  "darkfield": "../models/group01/darkfield.tif",
+  "model_metadata": "../models/group01/model.json"
+}]</pre>
+  <p class="small">This is a manifest fragment. Keep the generated group ID used by its cores and replace the asset paths with real reviewed files. Compatibility depends on the acquisition settings. Folder similarity alone is insufficient.</p>
+  <p class="small">The flatfield and darkfield are frozen correction fields. The model receipt records their origin and expected checksums. To fit new fields, use the separate <code>fit-cidre</code> workflow with a compatible pool and the pinned Java runtime.</p>
+  <div class="review"><b>Scientific review remains separate.</b> Successful field application does not establish absolute fluorescence preservation. See <code>docs/METHODS.md</code> and <code>docs/VALIDATION.md</code>.</div>
+  <div class="foot"><span>TMA QC · Getting started</span><span>7 / 19</span></div>
+</section>
+
+<section class="page" id="run">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>03 · Processing</span></div>
+  <h2>Process your first core</h2>
+  <p>Copy <code>configs/af2048.toml</code> from the checkout to your dataset’s <code>configs/af.toml</code>. Set the local cache location. The normal defaults use CIDRE correction and supplied geometry.</p>
+  <pre class="small">[runtime]
+cache_root = "/local-ssd/tma-qc-cache"
+threads = 2
+tile_workers = 4
+
+[profile]
+shape = [2048, 2048]
+dtype = "uint16"</pre>
+  <p>Use the actual core UID printed on page 6 in place of <code>CORE_UID_FROM_MANIFEST</code>. An optional read-only readiness check is:</p>
+  <pre class="dark">python -m tma_qc plan \
+  --manifest /data/tma-study/manifests/manifest.json \
+  --config /data/tma-study/configs/af.toml \
+  --out /data/tma-study/runs/run01 \
+  --core CORE_UID_FROM_MANIFEST</pre>
+  <p>When the selected core’s prerequisites are ready, process it:</p>
+  <pre class="dark">python -m tma_qc run \
+  --manifest /data/tma-study/manifests/manifest.json \
+  --config /data/tma-study/configs/af.toml \
+  --out /data/tma-study/runs/run01 \
+  --core CORE_UID_FROM_MANIFEST \
+  --resume</pre>
+  <p class="small">Repeat <code>--core</code> to select more cores. Omit it to process all manifest cores. Rerun the same command with <code>--resume</code> to reuse compatible verified outputs; code or input changes can require rebuilding stages.</p>
+  <div class="grid">
+    <div class="card"><h3>Try the software first</h3><p class="small"><code>python -m tma_qc demo --out /tmp/tma-qc-demo</code><br>Use a new directory. This generates runnable synthetic inputs and a small 160 × 160 tile profile.</p></div>
+    <div class="card"><h3>Read the result</h3><p class="small">Open <code>runs/run01/reports/index.html</code> in a browser. For <code>run</code>: exit 0 = execution complete, 1 = error, 2 = blocked.</p></div>
+  </div>
+  <div class="foot"><span>TMA QC · Getting started</span><span>8 / 19</span></div>
+</section>
+
+<section class="page" id="python-api">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>03 · Processing</span></div>
+  <h2>Use TMA QC from Python</h2>
+  <p class="lead">Prepare manifests and run the same recorded stages from scripts and notebooks. Method selectors and settings are shared with the terminal interface.</p>
+  <p class="small"><code>phomedics-tma-qc</code> is the installed package; <code>tma_qc</code> is the Python module. <code>tma-qc</code> is the terminal shortcut for <code>python -m tma_qc</code>.</p>
+  <h3>Discover original AF images</h3>
+  <pre class="small">from tma_qc.api import import_folder, import_pairs, run
+
+draft = import_folder(
+    raw_root="/data/tma-study/raw",
+    output="/data/tma-study/manifests/manifest.json",
+    dataset_id="TMA-STUDY-01",
+)
+print("Core acquisitions:", len(draft["cores"]))</pre>
+  <p class="small">Use a new output path. Review geometry, model assets and acquisition identity before running. For H&amp;E pairs, prepare the CSV on page 14 and call:</p>
+  <pre class="small">paired = import_pairs(
+    manifest="/data/tma-study/manifests/manifest.json",
+    pairs_csv="/data/tma-study/pairing/sections.csv",
+    output="/data/tma-study/manifests/paired.json",
+)</pre>
+  <h3>Run a prepared manifest</h3>
+  <pre class="small">summary = run(
+    manifest="/data/tma-study/manifests/paired.json",
+    output="/data/tma-study/runs/run01",
+    config="/data/tma-study/configs/af.toml",
+    resume=True,
+)
+print(summary["execution_errors"], summary["blocked_stages"])</pre>
+  <p class="small">Use <code>manifest.json</code> for AF-only processing. Optional <code>selected=["CORE_UID"]</code> limits processing to actual core UIDs and their pairs. The result is a summary dictionary; invalid inputs may raise exceptions.</p>
+  <div class="note"><b>One workflow.</b> Both interfaces save the same source checks, outputs, stage receipts and offline reports. Earlier <code>import_raw_folder</code> and <code>run_pipeline</code> imports remain available.</div>
+  <div class="foot"><span>TMA QC · Getting started</span><span>9 / 19</span></div>
+</section>
+
+<section class="page" id="qc-link">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>04 · Quality review</span></div>
+  <h2>Connect each process to QC</h2>
+  <p class="lead">Processing produces an image or a coordinate record. Its QC reads those results and saves measurements, evidence and review status separately.</p>
+  <table class="compact">
+    <thead><tr><th>Stage</th><th>What to review</th></tr></thead>
+    <tbody>
+      <tr><td>1 · <code>index</code></td><td>Hashes, single raw plane, stored pixel segments and expected profile. Verifies listed files; missing physical acquisitions need an expected inventory.</td></tr>
+      <tr><td>2 · <code>tile_qc</code></td><td>Local detail, saturation and zeros in raw FOVs. Unavailable-window reasons and native sampling coverage accompany the measurements.</td></tr>
+      <tr><td>3 · <code>geometry</code></td><td>Native tile positions: supplied by default, optionally estimated with reviewed MIST inputs.</td></tr>
+      <tr><td>4 · <code>geometry_qc</code></td><td>Similarity and residual shifts in expected overlaps. Advisory flags leave FOV order and positions unchanged.</td></tr>
+      <tr><td>5 · <code>illumination</code></td><td>Corrected tiles from the frozen flatfield and darkfield.</td></tr>
+      <tr><td>6 · <code>illumination_qc</code></td><td>Raw/selected overlap agreement, assessed coverage, signal spans and model gains. See page 11.</td></tr>
+      <tr><td>7 · <code>mosaic</code></td><td>Native raw and selected mosaics built with the same geometry and blending.</td></tr>
+      <tr><td>8 · <code>mosaic_qc</code></td><td>Localized seam tails, global/local brightness patterns and acquisition coverage. See page 12.</td></tr>
+      <tr><td>9 · <code>tissue</code></td><td>Provisional possible-tissue and unknown covered-area maps.</td></tr>
+    </tbody>
+  </table>
+  <h3>Read execution and quality together</h3>
+  <div class="grid">
+    <div class="card"><h3>Execution</h3><p class="small">Did the stage complete, fail or wait for a prerequisite? A diagnostic crash is a software execution error.</p></div>
+    <div class="card"><h3>Quality</h3><p class="small"><code>review</code> means inspect available evidence. <code>not_assessed</code> means a measurement is unavailable; it is not a pass.</p></div>
+  </div>
+  <div class="review"><b>Keep the reconstruction available.</b> Diagnostic failure does not suppress an otherwise valid stitched image. Essential missing inputs can block dependent processing. Scientific acceptance requires review.</div>
+  <p class="small"><b>Focus is advisory.</b> Constant or weak-detail windows cannot establish blur. Window/interior coverage is geometric sampling, including unavailable windows; it is not a blurred-tissue percentage. Tile-grid previews average counts and use native-histogram display limits.</p>
+  <div class="foot"><span>TMA QC · Getting started</span><span>10 / 19</span></div>
+</section>
+
+<section class="page" id="illumination-review">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>04 · Quality review</span></div>
+  <h2>Review illumination correction</h2>
+  <p class="lead">Does the same tissue agree better across overlapping tiles, and what happened to its signal range?</p>
+  <div class="route"><span>Raw tiles + geometry</span><span>Frozen correction fields</span><span>Same supported pixels</span><span>Before/after evidence</span></div>
+  <table>
+    <thead><tr><th>Evidence</th><th>How to interpret it</th></tr></thead>
+    <tbody>
+      <tr><td>Assessed / candidate pairs</td><td>How many geometric overlaps supplied measurable comparison evidence. This fraction describes pairs, not tissue area.</td></tr>
+      <tr><td>Exclusion reasons</td><td>Insufficient raw support, unavailable raw correlation or correlation below the selection rule. Excluded pairs remain unknown.</td></tr>
+      <tr><td>Mismatch measurements</td><td>Relative mean difference and matched-pixel differences, including p95 and worst-pair crops. A mean can hide equal and opposite local errors.</td></tr>
+      <tr><td>Signal spans + gains</td><td>Per-FOV raw/selected percentiles and span ratios at identical sampled coordinates, plus model-gain percentiles.</td></tr>
+      <tr><td>Exact signal collapse</td><td>Native extrema show that varying raw counts became constant. Inspect the source, model and selected image for the cause.</td></tr>
+    </tbody>
+  </table>
+  <h3>Start with the evidence coverage</h3>
+  <p class="small">A pair is eligible with at least <b>256 raw-supported samples</b> and <b>raw correlation ≥ 0.8</b>. These are uncalibrated selection rules, not image-quality acceptance thresholds. The same raw-selected pairs and pixels are used after correction.</p>
+  <h3>Then inspect agreement and signal together</h3>
+  <p class="small">Lower mismatch supports improved overlap agreement. Signal compression can also reduce absolute differences. Relative mismatch avoids a fixed one-count denominator floor; two zero means are unassessed. Span ratios and model gains remain review measurements without automatic cutoffs.</p>
+  <div class="review"><b>Agreement is one part of validation.</b> It does not establish absolute fluorescence preservation, independent geometric accuracy or performance across excluded overlaps.</div>
+  <p class="tiny muted">Open the core report’s illumination section, overlap crops and <code>illumination-qc.json</code>. Retain the raw reference and compatible model receipt.</p>
+  <div class="foot"><span>TMA QC · Getting started</span><span>11 / 19</span></div>
+</section>
+
+<section class="page" id="mosaic-review">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>04 · Quality review</span></div>
+  <h2>Review the assembled mosaic</h2>
+  <p class="lead">Check native seam evidence, repeating brightness patterns and acquired support. Read local tails alongside whole-core summaries.</p>
+  <h3>1. Find localized seam changes</h3>
+  <p class="small">Known overlap midlines are measured across adjacent native strips, with nearby control cuts where possible. The report retains seam medians, <b>p95 and maximum</b> steps. Distinct-seam counts include measurable low-signal and mixed strata; stratum counts remain separate.</p>
+  <p class="small">Worst-seam records identify the FOV pair, native cut and largest measured line. A localized brightness step can remain visible even when the median is zero. Isolated peaks may be noise or anatomy; inspect p95, controls and the images together.</p>
+  <h3>2. Compare global and local tile-pitch patterns</h3>
+  <p class="small">The fit uses every supported native row or column bin. Four orthogonal strips per axis preserve regional evidence that can cancel in a global average. Both before/after fits use the same raw-defined pixel support.</p>
+  <table class="compact">
+    <thead><tr><th>Saved measurement</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Harmonic amplitudes</td><td>Count amplitudes at the first three fitted harmonics of tile pitch.</td></tr>
+      <tr><td>Explained fraction</td><td>How much detrended projection variation the fitted harmonics explain. It is not an artifact probability.</td></tr>
+      <tr><td>Support + region</td><td>Native sample counts, strip coordinates and unavailable reasons. Global and local fit counts are shown separately.</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Accumulation uses bounded 512 × 512 source patches. Preview profiles alone are averaged; their reduction cannot alias the native fit. Missing native bins stay excluded, and display bins containing a gap remain unknown.</p>
+  <h3>3. Inspect coverage and original tissue</h3>
+  <p class="small">Use the shared-window raw/selected comparison, native TIFFs and <code>coverage.tif</code>. Coverage marks acquired image support. It does not prove the entire intended core was captured.</p>
+  <div class="review"><b>Keep the result advisory.</b> Anatomy can repeat at tile spacing. Patterns may cancel within one strip or occur at other periods. A low score cannot certify a clean core, and no artifact-area fraction is reported.</div>
+  <div class="foot"><span>TMA QC · Getting started</span><span>12 / 19</span></div>
+</section>
+
+<section class="page" id="outputs">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>04 · Quality review</span></div>
+  <h2>Review your stitched images</h2>
+  <div class="route"><span>Verify sources</span><span>Tile QC + geometry</span><span>Correction</span><span>Stitch + QC</span></div>
+  <p>Each AF core has nine recorded stages: <code>index</code>, <code>tile_qc</code>, <code>geometry</code>, <code>geometry_qc</code>, <code>illumination</code>, <code>illumination_qc</code>, <code>mosaic</code>, <code>mosaic_qc</code> and <code>tissue</code>.</p>
+  <pre class="small">runs/run01/
+├── reports/index.html           Start reviewing here
+├── reports/core-qc.csv          Per-core summary
+├── stage-results.json           Stage outputs and checksums
+└── acquisitions/
+    └── &lt;acquisition&gt;/&lt;core&gt;/AF/&lt;core_uid&gt;/
+        └── mosaic/&lt;stage-key&gt;/
+            ├── raw-mosaic.tif
+            ├── mosaic.tif
+            ├── coverage.tif
+            └── stage.json</pre>
+  <table>
+    <thead><tr><th>Output</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>raw-mosaic.tif</code></td><td>Native stitched reference built from original raw tiles.</td></tr>
+      <tr><td><code>mosaic.tif</code></td><td>The selected stitched image. CIDRE-corrected under the default illumination setting.</td></tr>
+      <tr><td><code>coverage.tif</code></td><td>Geometric acquisition coverage, showing where tiles contribute data.</td></tr>
+      <tr><td>QC pages and evidence</td><td>Focus/detail diagnostics, overlap checks, seam/brightness measurements and provisional tissue support for review.</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Both mosaics retain the full acquisition canvas at native resolution as float32 BigTIFFs. Complete core coverage depends on a complete intended tile set and appropriate geometry.</p>
+  <div class="note"><b>Current filenames are product names.</b> Slide/core identity is carried by the UID folders, manifest and stage records. Retain these records when moving images. A filename scheme embedding original slide IDs remains a proposed export improvement.</div>
+  <p class="small">The separate source-first publication recipe exports the selected image as <code>corrected.tif</code> inside <code>results.zip</code>, together with manifests and QC records. It requires an independently verified complete AF core.</p>
+  <div class="review"><b>Execution and image quality are separate.</b> A completed stitch is available for inspection even when a diagnostic stage fails. Current scientific image-quality acceptance requires review.</div>
+  <div class="foot"><span>TMA QC · Getting started</span><span>13 / 19</span></div>
+</section>
+
+<section class="page" id="registration">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>05 · Registration</span></div>
+  <h2>Pair AF and H&amp;E cores</h2>
+  <p class="lead">Reuse your AF manifest. Add already cropped H&amp;E cores and one pairing CSV; the importer generates the paired manifest.</p>
+  <pre class="small">tma-study/
+├── he/HE_SLIDE_01/A1.tif
+├── pairing/sections.csv
+└── manifests/
+    ├── manifest.json
+    └── paired.json</pre>
+  <p class="small">Each H&amp;E file is one self-contained core-crop TIFF plane, grayscale or RGB; native pyramids are supported. Prepare whole-slide crops separately. Keep AF acquisition folders in place.</p>
+  <h3>Find the AF core UID</h3>
+  <p class="small">From <code>tma-study/</code>, list UID, source folder/acquisition and core label. Choose the acquisition you reviewed.</p>
+  <pre class="small">python - &lt;&lt;'PY'
+from tma_qc.io.manifest import Manifest
+for c in Manifest("manifests/manifest.json").cores:
+    print(c.uid, c.metadata.get("source_folder", c.acquisition), c.core)
+PY</pre>
+  <h3>Write one reviewed pair per CSV row</h3>
+  <p class="small">Save <code>pairing/sections.csv</code>. Choose your own pair <code>uid</code>; copy the exact AF UID into <code>af_core</code>. The H&amp;E path resolves beside this CSV. Confirm the section relationship from your records.</p>
+  <pre class="small">uid,af_core,he_path,relationship
+PAIR_01,CORE_UID_FROM_MANIFEST,../he/HE_SLIDE_01/A1.tif,neighboring_sections</pre>
+  <h3>Generate the paired manifest</h3>
+  <pre class="dark">python -m tma_qc import-pairs \
+  --manifest /data/tma-study/manifests/manifest.json \
+  --pairs /data/tma-study/pairing/sections.csv \
+  --out /data/tma-study/manifests/paired.json</pre>
+  <p class="small">Hashes and the paired JSON are generated for you. Use a new output filename. Original AF and H&amp;E slide IDs can differ; a shared core label alone does not establish a pair.</p>
+  <div class="foot"><span>TMA QC · Getting started</span><span>14 / 19</span></div>
+</section>
+
+<section class="page" id="registration-run">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>05 · Registration</span></div>
+  <h2>Run your first registration</h2>
+  <p class="lead">Start with the built-in global geometry/SIFT fit and review its result. Advanced assets and method tuning can follow.</p>
+  <h3>Enable the fitter in your AF configuration</h3>
+  <p class="small">Edit the existing <code>[registration]</code> section in <code>configs/af.toml</code>, or add it if absent. Keep your AF and cache settings.</p>
+  <pre class="small"># configs/af.toml — alongside AF and runtime settings
+[registration]
+backend = "core"
+core_method = "geometry_sift"</pre>
+  <p class="small">Built-in defaults export aligned H&amp;E. This first run needs no second TOML, supplied transform, landmark file or optional model package.</p>
+  <h3>Run one AF core and its assigned H&amp;E pairs</h3>
+  <pre class="dark">python -m tma_qc run \
+  --manifest /data/tma-study/manifests/paired.json \
+  --config /data/tma-study/configs/af.toml \
+  --out /data/tma-study/runs/run01 \
+  --core CORE_UID_FROM_MANIFEST --resume</pre>
+  <p class="small">Use the AF UID from your CSV. Compatible AF stages are reused on resume; source hashes are checked again. A pair adds <code>he_qc</code>, <code>registration</code> and <code>registration_qc</code>.</p>
+  <h3>Open the report and aligned image</h3>
+  <pre class="small">runs/run01/reports/index.html
+runs/run01/pairs/&lt;pair_uid&gt;/registration/&lt;stage-key&gt;/
+    aligned-he.tif   transform.json   overlay.png</pre>
+  <p class="small">The AF mosaic is the fixed reference. H&amp;E is sampled onto its native canvas. Review original sections, the overlay and geometric overlap. Without landmarks, independent landmark accuracy is reported unavailable.</p>
+  <div class="note"><b>Later options.</b> Page 16 shows independent landmarks. <code>examples/section-pairs.advanced.example.csv</code> adds supplied transforms and calibrated pixel sizes. Method tuning, RoMa and local refinement are covered in <code>docs/RESEARCH_GUIDE.md</code>.</div>
+  <div class="foot"><span>TMA QC · Getting started</span><span>15 / 19</span></div>
+</section>
+
+<section class="page" id="registration-review">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>05 · Registration</span></div>
+  <h2>Review alignment independently</h2>
+  <p class="lead">Pair stages are <code>he_qc</code>, <code>registration</code> and <code>registration_qc</code>. Open the pair report, original sections and native exports together.</p>
+  <pre class="small">runs/run01/pairs/&lt;pair_uid&gt;/registration/&lt;stage-key&gt;/
+├── transform.json
+├── aligned-he.tif                 When export is enabled
+├── geometric-overlap.tif
+├── overlay.png
+├── candidates.json               Core fitting evidence
+├── fit-correspondences.csv
+├── refinement.json
+└── local-pull-displacement.npy    Only when a local warp is used</pre>
+  <p class="small">The original H&amp;E image is sampled onto the native AF canvas once, in bounded chunks. <code>transform.json</code> declares H&amp;E → AF direction and native pixel coordinates. Retain its companion residual field and coordinate maps when present; the global affine alone cannot reproduce a local warp.</p>
+  <h3>Optional: supply held-out landmarks</h3>
+  <p class="small">Use declared <code>evaluation_only</code> / <code>native_pixels</code> JSON, or a CSV with these columns. The two rows below illustrate the format; the default provisional tolerance check requires at least five landmarks.</p>
+  <pre class="small">he_x,he_y,af_x,af_y
+120.0,180.0,128.0,175.0
+420.0,310.0,428.0,305.0</pre>
+  <p class="small">Set <code>landmarks</code> in the pairing CSV to <code>../geometry/PAIR_01-landmarks.csv</code>. Choose shared structures across the core independently from fitting. Coordinates must be distinct on both images; optional IDs must be nonempty and unique. Uniqueness alone does not establish biological independence. These points are never passed to the fitter.</p>
+  <p class="small">After editing the CSV, re-import from the original AF manifest into a new file such as <code>paired-evaluation.json</code>, then run that manifest. CSV edits do not update an earlier paired JSON.</p>
+  <table class="compact">
+    <thead><tr><th>Evidence</th><th>What it establishes</th></tr></thead>
+    <tbody>
+      <tr><td>Fit matches and residuals</td><td>Internal fitting support, not independent alignment accuracy.</td></tr>
+      <tr><td>Held-out landmark errors</td><td>Local errors at sampled shared structures, reported in native AF pixels, including the local field when present.</td></tr>
+      <tr><td>Geometric overlap</td><td>Acquired geometric support, not dense correspondence or a usable-tissue mask.</td></tr>
+    </tbody>
+  </table>
+  <div class="review"><b>All results require review.</b> Neighboring sections differ. Sparse landmarks, model confidence and positive transform Jacobians cannot establish dense anatomical accuracy or restore physically folded tissue.</div>
+  <div class="foot"><span>TMA QC · Getting started</span><span>16 / 19</span></div>
+</section>
+
+<section class="page" id="method-choices">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>06 · Methods and settings</span></div>
+  <h2>Choose a method</h2>
+  <p class="lead">Start with the defaults. Select another supported method when your study needs it, and keep the same manifests, stage sequence and QC records.</p>
+  <pre class="small">python -m tma_qc methods
+python -m tma_qc run --help</pre>
+  <table class="compact">
+    <thead><tr><th>Choice</th><th>Available methods</th></tr></thead>
+    <tbody>
+      <tr><td>Geometry</td><td><code>provided</code> (default) or <code>mist</code>. MIST needs Java and a reviewed tile grid.</td></tr>
+      <tr><td>Illumination</td><td><code>cidre</code> (default) applies frozen fields; <code>none</code> retains original counts.</td></tr>
+      <tr><td>Registration</td><td><code>provided</code> (default), experimental <code>sift_affine</code>, or integrated <code>sift</code>, <code>orb</code>, <code>geometry_sift</code>, <code>geometry_roma</code>.</td></tr>
+      <tr><td>Core transform</td><td><code>similarity</code> (default) or <code>affine</code>. The latter also allows shear and unequal scaling.</td></tr>
+      <tr><td>Local refinement</td><td><code>none</code> (default) or optional <code>bspline_mi</code>.</td></tr>
+    </tbody>
+  </table>
+  <h3>Change a method at the terminal</h3>
+  <pre class="small">python -m tma_qc run \
+  --manifest /data/tma-study/manifests/paired.json \
+  --config /data/tma-study/configs/af.toml \
+  --out /data/tma-study/runs/geometry-sift \
+  --registration-method geometry_sift \
+  --registration-transform similarity \
+  --set tile_qc.stride=128 --resume</pre>
+  <p class="small"><code>plan</code> accepts the same method and parameter options. For comparisons, keep inputs and evaluation points fixed, choose a separate run directory, and change one method or setting at a time.</p>
+  <div class="note"><b>Asset assignments take precedence.</b> Supplied tile positions are used before MIST; a supplied pair transform is used before fitting. RoMa needs its extra and cached weights; B-spline/MI needs its extra. Missing prerequisites block that path.</div>
+  <p class="small muted">Tile detail QC, mosaic blending and tissue support currently each use one method with tunable parameters. Geometry QC flags evidence for review and never changes tile order.</p>
+  <div class="foot"><span>TMA QC · Getting started</span><span>17 / 19</span></div>
+</section>
+
+<section class="page" id="method-parameters">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>06 · Methods and settings</span></div>
+  <h2>Tune and reproduce settings</h2>
+  <p class="lead">Keep common settings and detailed core matching in one TOML. Omitted values retain their defaults.</p>
+  <pre class="small">[registration]
+backend = "core"
+core_method = "geometry_sift"
+
+[registration.matching]
+max_dimension = 1024
+transform = "similarity"
+min_inliers = 12
+
+[registration.refinement]
+backend = "none"</pre>
+  <p class="small">Merge these tables into your existing main file. Existing external <code>core_config</code> files still work; inline keys override only the corresponding research settings.</p>
+  <h3>Use the same choices in Python</h3>
+  <pre class="small">from tma_qc.api import run, settings
+effective = settings(registration_method="geometry_sift")
+summary = run(
+    manifest="/data/tma-study/manifests/paired.json",
+    output="/data/tma-study/runs/geometry-sift",
+    config="/data/tma-study/configs/af.toml",
+    registration_method="geometry_sift",
+    parameters={"tile_qc": {"stride": 128}}, resume=True,
+)</pre>
+  <h3>One precedence rule</h3>
+  <p class="small"><b>Defaults → TOML → parameter overrides → explicit method selectors.</b> CLI overrides use repeated <code>--set SECTION.KEY=VALUE</code> with typed TOML values; Python uses nested dictionaries. Unknown names and invalid values are errors.</p>
+  <div class="note"><b>Repeat your intended settings when resuming.</b> <code>run --resume</code> uses that invocation’s arguments. Effective main settings are saved in <code>run.json</code>; pair receipts also save resolved core settings. Relevant changes rebuild affected stages.</div>
+  <p class="sources"><code>docs/SETTINGS.md</code> lists all defaults, units and backend applicability.<br><code>configs/methods.example.toml</code> is an annotated starting point.<br>Core methods use <code>registration.matching.max_dimension</code>; main <code>registration.max_dimension</code> belongs to legacy <code>sift_affine</code>.</p>
+  <div class="foot"><span>TMA QC · Getting started</span><span>18 / 19</span></div>
+</section>
+
+<section class="page" id="code-help">
+  <div class="top"><b>PhoMedics / TMA QC</b><span>Code and help</span></div>
+  <h2>Find code and get help</h2>
+  <p>The CLI runs the workflow; offline HTML reports show the results. The source is organized by responsibility.</p>
+  <table class="compact">
+    <thead><tr><th>Source location</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><code>api.py</code> / <code>cli.py</code> / <code>settings.py</code></td><td>Public interfaces, method choices and shared setting resolution.</td></tr>
+      <tr><td><code>io/</code> / <code>schema.py</code></td><td>Folder/manifest input, source identities and file contracts.</td></tr>
+      <tr><td><code>workflows.py</code> / <code>context.py</code></td><td>The stage sequence and per-core/per-pair inputs.</td></tr>
+      <tr><td><code>pipeline.py</code></td><td>Dependencies, verified resume, checkpoints and stage records.</td></tr>
+      <tr><td><code>stages/</code>, <code>backends/</code>, <code>qc/</code></td><td>Processing steps, numerical implementations and diagnostics.</td></tr>
+      <tr><td><code>reporting/</code> / <code>tests/</code></td><td>Core/batch review pages and software/scientific controls.</td></tr>
+    </tbody>
+  </table>
+  <h3>Common first-run questions</h3>
+  <table class="compact">
+    <thead><tr><th>Symptom</th><th>Check next</th></tr></thead>
+    <tbody>
+      <tr><td>No recognized core folders</td><td>Point the raw root above the slide/core hierarchy. Compare pages 2–3.</td></tr>
+      <tr><td>Blocked FOV set</td><td>Inspect <code>blocked_reasons</code>: missing indices, empty cores or ambiguous scan planes.</td></tr>
+      <tr><td>Missing field or positions</td><td>Attach compatible model assets and complete native geometry; check relative paths.</td></tr>
+      <tr><td>Source changed / hash mismatch</td><td>Check acquisition/copy activity and the expected source. Import a new reviewed snapshot rather than editing hashes to bypass verification.</td></tr>
+      <tr><td>Registration blocked</td><td>Verify AF UID, H&amp;E checksum, selected method, optional packages and cached weights.</td></tr>
+    </tbody>
+  </table>
+  <h3>Continue in the repository</h3>
+  <p class="sources"><code>examples/README.md</code> — supported input layouts and templates.<br>
+  <code>docs/RESEARCH_GUIDE.md</code> — preparation, run and review workflow.<br>
+  <code>docs/SETTINGS.md</code> — method choices, parameter defaults and units.<br>
+  <code>docs/pipeline.md</code> — file contracts, coordinates and output layout.<br>
+  <code>docs/METHODS.md</code>, <code>docs/STAGE_QC.md</code> — calculations and QC limits.<br>
+  <code>docs/DEVELOPMENT.md</code> — extending code and running <code>make check</code>.</p>
+  <p class="sources"><b>Reference:</b> <a href="https://github.com/mahmoodlab/TRIDENT">mahmoodlab/TRIDENT</a> and <a href="https://trident-docs.readthedocs.io/en/latest/">TRIDENT documentation</a>, reviewed 20 October 2026. This guide is based on the local PhoMedics source and examples; TRIDENT is an onboarding reference, not a dependency.</p>
+  <p class="tiny muted">The tutorial’s folder examples are illustrative. Existing scientific data, transfer state and frozen results are outside the tutorial build. The PDF can be regenerated from <code>docs/tutorial/user-guide.html</code>.</p>
+  <div class="foot"><span>TMA QC · Getting started</span><span>19 / 19</span></div>
+</section>
+
+</body>
+</html>

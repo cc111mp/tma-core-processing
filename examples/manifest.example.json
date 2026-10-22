@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "dataset_id": "TMA-2026",
+  "raw_root": "/replace/with/verified/raw/archive",
+  "groups": [
+    {
+      "id": "example-acquisition-lamp-AF",
+      "flatfield": "models/flatfield.tif",
+      "darkfield": "models/darkfield.tif",
+      "model_metadata": "models/model.json",
+      "metadata": {"compatibility": "Verify camera, lamp, exposure and channel"}
+    }
+  ],
+  "cores": [
+    {
+      "uid": "example-original-A1-AF",
+      "acquisition": "example-original",
+      "slide": "example-slide",
+      "core": "A1",
+      "channel": "AF",
+      "group": "example-acquisition-lamp-AF",
+      "role": "raw_camera",
+      "fovs": [
+        {"id": "1", "path": "A1/stitch/FOV_00001.tif", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"}
+      ],
+      "positions": "geometry/A1-positions.json",
+      "geometry_reviewed": false,
+      "metadata": {"template_only": true, "coordinate_units": "unconfirmed"}
+    }
+  ],
+  "pairs": [],
+  "metadata": {"template_only": true, "instruction": "Replace all example paths and SHA256 placeholders. The importer can populate FOV identities from the completed copy inventory."}
+}

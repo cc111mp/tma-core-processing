@@ -1,0 +1,38 @@
+# Merge the desired tables into your acquisition's main TOML.
+# Omitted settings retain built-in defaults. All paths below require your assets.
+# Inspect supported methods: tma-qc methods
+# Full units, defaults and applicability: docs/SETTINGS.md
+
+[geometry]
+backend = "provided"  # provided or mist; supplied coordinates take precedence
+
+[illumination]
+mode = "cidre"  # frozen CIDRE fields, or none
+
+[tile_qc]
+window = 256
+stride = 256
+prefilter_sigma = 1.0
+
+[mosaic]
+alpha = 1.5
+
+[registration]
+backend = "core"
+core_method = "geometry_sift"  # sift, orb, geometry_sift, geometry_roma
+export_aligned_he = true
+# Optional existing research TOML; inline tables below override individual keys.
+# core_config = "core-registration.toml"
+
+[registration.matching]
+max_dimension = 1024
+feature_view = "gradient"  # gradient or intensity
+transform = "similarity"  # similarity or affine
+min_inliers = 12
+ransac_view_pixels = 4.0
+
+[registration.refinement]
+backend = "none"  # bspline_mi requires the registration-refine extra
+
+[registration.roma]
+device = "auto"  # geometry_roma requires extra + explicit cached weights

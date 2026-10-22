@@ -1,0 +1,27 @@
+[profile]
+shape = [2048, 2048]
+dtype = "uint16"
+
+[runtime]
+# Retained decoded raw FOV arrays per core; 0 disables this memory cache.
+decoded_cache_bytes = 536870912
+# Bounded concurrent FOV detail measurements; 1 uses serial tile QC.
+tile_workers = 4
+
+[storage]
+reserve_bytes = 268435456
+safety_factor = 1.2
+
+[geometry]
+backend = "provided"
+
+[illumination]
+mode = "cidre"
+
+[registration]
+backend = "provided"
+
+# Thresholds are provisional review settings, not validated acceptance limits.
+[qc]
+landmark_tolerance_pixels = 20.0
+minimum_landmarks = 5
