@@ -4,6 +4,26 @@ The package supports exploratory research with explicit inputs and reviewable
 outputs. Start with [workflows.py](../src/tma_qc/workflows.py) to see stage order,
 then follow a stage into `backends/` or `qc/` for the image calculation.
 
+## Follow one operation through the code
+
+For an ordinary run, read these modules in order:
+
+1. [cli.py](../src/tma_qc/cli.py) declares arguments;
+   [commands.py](../src/tma_qc/commands.py) calls the application operation.
+   [api.py](../src/tma_qc/api.py) exposes the same operations to Python callers.
+2. [workflows.py](../src/tma_qc/workflows.py) declares the AF and pair stages,
+   dependencies and configuration sections. [pipeline.py](../src/tma_qc/pipeline.py)
+   executes them with receipts, verification and failure isolation.
+3. Follow a stage such as [illumination.py](../src/tma_qc/stages/illumination.py)
+   into its [correction backend](../src/tma_qc/backends/cidre.py) and
+   [QC calculation](../src/tma_qc/qc/illumination.py).
+4. [assessment.py](../src/tma_qc/qc/assessment.py) summarizes measurement
+   availability; [core.py](../src/tma_qc/reporting/core.py) and
+   [batch.py](../src/tma_qc/reporting/batch.py) present the saved evidence.
+
+Use `tma-qc settings` to inspect validated configuration while reading a method,
+and the [test map](../tests/README.md) to locate its controls.
+
 ## Readable research code
 
 Use names that describe the image or operation, and keep functions focused on
@@ -60,6 +80,7 @@ python3 -m unittest tests.test_transfer_check tests.test_registration_check
 | --- | --- | --- |
 | `cli.py` | Options, dispatch and command error boundary | Image processing |
 | `commands.py` | Application command handlers | Numerical method implementations |
+| `api.py` | Public manifest import, settings, readiness and run entry points | CLI parsing and image calculations |
 | `settings.py` | Inspectable method registry, selectors and typed parameter overrides | Image processing and runtime downloads |
 | `registration_config.py` | Pure core configuration, schema and resolution | Optional imaging/runtime imports |
 | `workflows.py` | AF/pair stage order, dependencies and deferred input identities | Checkpoint implementation |

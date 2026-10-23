@@ -125,6 +125,26 @@ class RegistrationTests(unittest.TestCase):
         self.assertEqual(no_images["status"], ALERT)
         self.assertEqual(no_eval["status"], CHECK)
 
+    def test_missing_feature_log_requires_review(self):
+        core = self.core("A1")
+        (core / "Registration/registration_log.csv").unlink()
+
+        row = check_core(core, SETTINGS)
+
+        self.assertEqual(row["status"], CHECK)
+        self.assertEqual(row["matches"], "")
+        self.assertIn("missing registration_log.csv", row["problems"])
+
+    def test_empty_feature_log_requires_review(self):
+        core = self.core("A1")
+        (core / "Registration/registration_log.csv").write_text("detector,good_matches\n")
+
+        row = check_core(core, SETTINGS)
+
+        self.assertEqual(row["status"], CHECK)
+        self.assertEqual(row["matches"], "")
+        self.assertIn("missing or invalid matched-feature count", row["problems"])
+
     def test_residual_with_px_unit_is_read(self):
         # Bug found 2026-10-13: "35.65 px" was not read, so the shift rule never ran.
         row = check_core(

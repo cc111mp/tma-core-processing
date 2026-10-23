@@ -10,6 +10,14 @@ import numpy as np
 
 
 def detail_metrics(image, sigma=1.0):
+    """Measure local spatial detail in one native-resolution image window.
+
+    ``sigma`` is a Gaussian prefilter width in native pixels. The main ratio is
+    mean squared Sobel gradient divided by filtered variance, measured inside
+    the saved filter margin. Contrast span and residual MAD retain count units.
+    Unavailable ratios are ``None`` with a reason. The ratio describes texture;
+    anatomy, noise and single-frequency blur can prevent a defocus interpretation.
+    """
     a = np.asarray(image, np.float64)
     if a.ndim != 2 or min(a.shape) < 8:
         raise ValueError("Detail measurement requires a 2D patch at least 8 pixels wide")
@@ -76,6 +84,12 @@ def detail_metrics(image, sigma=1.0):
 
 
 def tile_windows(image, size=256, stride=256, sigma=1.0):
+    """Yield detail records with native window and measurement-interior bounds.
+
+    Window size and stride are in native pixels. A final edge-anchored window
+    includes the far edge when a regular stride misses it; windows may overlap.
+    Sampling bounds include windows whose detail ratio is unavailable.
+    """
     if (
         isinstance(size, bool)
         or not isinstance(size, Integral)

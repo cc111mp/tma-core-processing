@@ -1,3 +1,35 @@
+# Unreleased usability polish — 2026-10-24
+
+Configuration inspection, Python readiness and clearer command/report navigation
+were checked using the existing pinned workstation runtime. Scientific formulas
+and default settings remain unchanged.
+
+- Strict full suite: **667 passed, four skipped**, with warnings treated as
+  errors. The four skips require optional RoMa; SimpleITK checks ran. Ruff lint
+  and formatting passed for all **130 Python files**.
+- `settings` works without imaging dependencies and leaves output/cache paths
+  absent. CLI and Python share typed settings and readiness checks. Core
+  selection, explicit selector precedence, controlled errors and execution-only
+  exit codes retain integration coverage.
+- A missing legacy feature log reproduced `OK` before the fix and now yields
+  `CHECK`. Empty logs also require review.
+- The reviewed baseline, polished source and isolated installed wheel each
+  completed all **12 stages** for one synthetic AF core and its explicit H&E
+  pair. All **16 TIFF artifacts** were byte-identical across those variants;
+  **18 input/configuration/asset files** remained unchanged.
+- The final wheel's **67 package Python files** exactly match the tested source.
+  Its installed `settings`, `plan` and `run` commands work outside the checkout.
+  No shared packages were installed or upgraded.
+- All six edited QC calculation modules have identical syntax trees after
+  excluding docstrings. The 26 processing/configuration modules checked against
+  the baseline retain identical bytes. Documentation links and Python examples
+  were checked.
+
+These controls establish software behavior and preservation of the supplied
+synthetic reconstruction. They do not calibrate biological artifact decisions,
+dense AF–H&E correspondence or real MIST/CIDRE estimation. Source identity changes
+conservatively invalidate older checkpoint reuse; prior artifacts are preserved.
+
 # Common-error audit, version 0.4.1 — 2026-10-22
 
 The [common-error review](REVIEW_20261022.md) records reproduced input,

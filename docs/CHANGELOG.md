@@ -1,3 +1,25 @@
+# Unreleased — usability polish, 2026-10-24
+
+Adds `tma-qc settings` to inspect validated effective JSON configuration with the
+same TOML, typed overrides and method selectors as processing. Python callers
+can use `tma_qc.api.plan()` for the existing read-only readiness checks. CLI help
+describes input/output paths, core selection and verified resume; `run` and `qc`
+finish with execution counts, image-review status and the report location.
+
+Quickstart and Python examples use a consistent study directory. API and QC
+docstrings explain inputs, native coordinate units, returned measurements and
+unavailable results; the development guide links the command-to-calculation
+reading path. Scientific formulas, default settings and command exit codes are
+unchanged.
+
+The standalone registration-log scanner now returns `CHECK` when
+`registration_log.csv` is absent, matching its treatment of unavailable feature
+counts in an existing log. Regression controls cover missing and empty logs.
+
+Updated source changes stage code identity. The first run with this code
+regenerates incompatible checkpoints while preserving earlier stage artifacts.
+No release is published by this change.
+
 # Version 0.4.1 — 2026-10-22
 
 Repairs reproduced problems in the initial common-error QC paths. Raw TIFF
