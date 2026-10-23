@@ -10,6 +10,7 @@ how to process them.
 ```bash
 tma-qc methods
 tma-qc methods --json
+tma-qc settings --help
 tma-qc run --help
 ```
 
@@ -43,6 +44,20 @@ image-quality conclusions remain advisory review evidence.
 
 ## Choose from the terminal
 
+Inspect the effective configuration before starting a run:
+
+```bash
+tma-qc settings \
+  --config /data/tma-study/configs/af.toml \
+  --registration-method geometry_sift \
+  --set tile_qc.stride=128
+```
+
+This prints validated JSON without reading a manifest or images and without
+creating output/cache directories. It works before imaging dependencies are
+installed. Inline core tables remain sparse; the fully resolved core configuration
+is recorded when registration runs. Use the same options with `run` or `plan`.
+
 Use an existing AF settings file and add the selected registration method:
 
 ```bash
@@ -58,7 +73,7 @@ tma-qc run \
   --resume
 ```
 
-`plan` accepts the same method selectors and `--set` arguments. For a comparison,
+`settings` and `plan` accept the same method selectors and `--set` arguments. For a comparison,
 use another run directory and change, for example, `--registration-method orb`.
 Hold the source manifest, illumination model and evaluation landmarks fixed.
 Keep independently evaluated landmarks out of fitting and parameter selection.
@@ -84,7 +99,7 @@ implementation, an input/output contract and validation.
 ## Choose from Python
 
 ```python
-from tma_qc.api import run, settings
+from tma_qc.api import plan, run, settings
 
 parameters = {
     "tile_qc": {"stride": 128},
@@ -96,6 +111,15 @@ effective = settings(
     parameters=parameters,
 )
 print(effective["registration"])
+
+readiness = plan(
+    manifest="/data/tma-study/manifests/paired.json",
+    output="/data/tma-study/runs/geometry-sift",
+    config="/data/tma-study/configs/af.toml",
+    registration_method="geometry_sift",
+    parameters=parameters,
+)
+print(readiness["ready_for_execution"], readiness["issues"])
 
 summary = run(
     manifest="/data/tma-study/manifests/paired.json",
@@ -116,6 +140,11 @@ using them. `parameters` is a nested dictionary with the same tables as TOML.
 `settings()` returns the validated main configuration without processing images;
 its inline core tables remain sparse. Fully resolved core settings are recorded
 when a registration stage runs.
+
+`plan()` reads the manifest and checks source hashes/headers, assets, runtime
+prerequisites and planned storage without creating a run. Supply `output` for an
+operational readiness result. Its `ready_for_execution` describes prerequisites,
+while `run()` still verifies inputs when processing starts.
 
 Like TOML, generic parameter dictionaries may retain presets for another
 backend. Only the active backend's parameters apply. A returned settings

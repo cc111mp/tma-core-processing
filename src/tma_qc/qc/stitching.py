@@ -107,6 +107,14 @@ def evaluate_overlaps(
     measurements=None,
     exclusion_reasons=None,
 ):
+    """Measure overlap agreement at supplied native XY tile positions.
+
+    ``frames`` maps FOV IDs to paths. Overlaps are stride-sampled to at most
+    ``max_sample`` pixels along their longest axis. Phase residuals are converted
+    back to native AF pixels; degenerate texture has no residual vector. Optional
+    raw-defined masks and eligibility keep photometric comparisons on identical
+    samples. Correlation, residuals and count differences are review evidence.
+    """
     reader = reader or read_image
     reused = measurements.prepare(frames, positions, max_sample) if measurements is not None else {}
     shape = reader(next(iter(frames.values()))).shape

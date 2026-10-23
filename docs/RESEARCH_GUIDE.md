@@ -17,6 +17,14 @@ Terminal examples use `python -m tma_qc` to select the package installed in the
 active Python environment. The installed `tma-qc` command is its shorter equivalent.
 For scripts and notebooks, see [Python usage](#use-the-workflow-from-python).
 
+| Task | Entry point |
+| --- | --- |
+| Discover available methods | `tma-qc methods` |
+| Inspect validated configuration | `tma-qc settings` or `api.settings()` |
+| Check prepared inputs and planned storage | `tma-qc plan` or `api.plan()` |
+| Process or resume a dataset | `tma-qc run` or `api.run()` |
+| Rebuild views of a saved run | `tma-qc report --run RUN_DIRECTORY` |
+
 ## Explore the software with synthetic data
 
 ```bash
@@ -58,14 +66,14 @@ absolute asset paths into its output manifest, preserving the source inputs.
 For a completed transfer inventory, the importer provides the initial manifest:
 
 ```bash
-python -m tma_qc import-copy --database /local/inventory.sqlite3 --raw-root /data/raw --out /data/manifests/manifest.json
+python -m tma_qc import-copy --database /local/inventory.sqlite3 --raw-root /data/tma-study/raw --out /data/tma-study/manifests/manifest.json
 ```
 
 For NAS-style AF folders without a transfer database, generate the same input
 contract directly from the raw tree:
 
 ```bash
-python -m tma_qc import-folder --raw-root /data/raw --out /data/manifests/manifest.json
+python -m tma_qc import-folder --raw-root /data/tma-study/raw --out /data/tma-study/manifests/manifest.json
 ```
 
 This hashes selected original FOVs and preserves exact source folder labels.
@@ -87,12 +95,20 @@ Set the local cache location. Unspecified settings come from validated defaults
 in [config.py](../src/tma_qc/config.py); the complete effective configuration is
 saved in each run's `run.json` and `attempts/<id>.json`.
 
-Use `tma-qc methods` to discover algorithm choices. `run` and `plan` accept
+Use `tma-qc methods` to discover algorithm choices. Inspect the effective settings
+without opening data or creating directories:
+
+```bash
+tma-qc settings --config /data/tma-study/configs/af.toml --set tile_qc.stride=128
+```
+
+`settings`, `run` and `plan` accept
 `--geometry-method`, `--illumination-method`, `--registration-method`,
 `--registration-transform`, `--registration-refinement` and repeated typed
 `--set SECTION.KEY=VALUE` overrides. Python `run()` accepts the corresponding
 underscored selector names and a nested `parameters` dictionary; `api.settings()`
-inspects the validated main configuration. Defaults are overridden by the TOML,
+returns the same validated main configuration as the terminal's JSON output.
+Defaults are overridden by the TOML,
 then parameter overrides, then explicit method selectors. See
 [methods and settings](SETTINGS.md) for complete defaults, units and examples.
 
@@ -107,21 +123,24 @@ separate experiment with an explicit pool and its own saved receipt.
 
 ```bash
 # Optional readiness check
-python -m tma_qc plan --manifest /data/manifests/manifest.json --config /data/configs/af.toml --out /data/runs/pilot --core example-original-A1-AF
+python -m tma_qc plan --manifest /data/tma-study/manifests/manifest.json --config /data/tma-study/configs/af.toml --out /data/tma-study/runs/run01 --core example-original-A1-AF
 # Process or resume this core
-python -m tma_qc run --manifest /data/manifests/manifest.json --config /data/configs/af.toml --out /data/runs/pilot --core example-original-A1-AF --resume
+python -m tma_qc run --manifest /data/tma-study/manifests/manifest.json --config /data/tma-study/configs/af.toml --out /data/tma-study/runs/run01 --core example-original-A1-AF --resume
 ```
 
 Use real manifest UIDs. Repeat `--core` to select several cores. Preflight reads
 source hashes and headers, checks model/geometry prerequisites and estimates AF
 capacity. It creates no output/cache directories and does not process images.
 Processing verifies sources again. Full source hashing can take time on NAS.
+Supply `--out` for an operational readiness result. It names the intended run
+location but does not create it.
 
 ## Use the workflow from Python
 
 The installed distribution is `phomedics-tma-qc`; its importable module is
-`tma_qc`. The public `tma_qc.api` module exposes the same import/run workflow for scripts
-and notebooks. The earlier lower-level functions remain available.
+`tma_qc`. The public `tma_qc.api` module provides manifest preparation, settings
+inspection, readiness checks and processing for scripts and notebooks. The
+earlier lower-level functions remain available.
 
 Generate a draft manifest once, using a new output filename:
 
@@ -129,8 +148,8 @@ Generate a draft manifest once, using a new output filename:
 from tma_qc.api import import_folder
 
 draft = import_folder(
-    raw_root="/data/raw",
-    output="/data/manifests/manifest.json",
+    raw_root="/data/tma-study/raw",
+    output="/data/tma-study/manifests/manifest.json",
     dataset_id="TMA-STUDY-01",
 )
 print("Core acquisitions:", len(draft["cores"]))
@@ -140,15 +159,37 @@ This has the same folder selection, hashing and review requirements as
 `import-folder`. Review the draft and supply geometry and compatible models
 before processing it. The importer refuses an existing output file.
 
+Inspect the configuration or check a prepared manifest without creating a run:
+
+```python
+from tma_qc.api import plan, settings
+
+effective = settings("/data/tma-study/configs/af.toml")
+print("Detail window:", effective["tile_qc"]["window"])
+
+readiness = plan(
+    manifest="/data/tma-study/manifests/manifest.json",
+    output="/data/tma-study/runs/run01",
+    config="/data/tma-study/configs/af.toml",
+    selected=["CORE_UID_FROM_MANIFEST"],
+)
+print("Ready:", readiness["ready_for_execution"])
+print("Issues:", readiness["issues"])
+```
+
+Supply `output` so `plan()` can check the intended processing location. It accepts
+the same method selectors and nested `parameters` as `run()`. Settings inspection
+does not read images; readiness reads source hashes and headers and checks assets.
+
 Run a prepared manifest:
 
 ```python
 from tma_qc.api import run
 
 summary = run(
-    manifest="/data/manifests/manifest.json",
-    output="/data/runs/pilot",
-    config="/data/configs/af.toml",
+    manifest="/data/tma-study/manifests/manifest.json",
+    output="/data/tma-study/runs/run01",
+    config="/data/tma-study/configs/af.toml",
     selected=["CORE_UID_FROM_MANIFEST"],
     resume=True,
 )
@@ -334,8 +375,8 @@ with their observation times. Reporting alone does not reverify historical raw
 files. Keep the original run directory when preserving an experiment.
 
 ```bash
-python -m tma_qc report --run /data/runs/pilot
-python -m tma_qc qc --run /data/runs/pilot --config /data/configs/qc-overrides.toml
+python -m tma_qc report --run /data/tma-study/runs/run01
+python -m tma_qc qc --run /data/tma-study/runs/run01 --config /data/tma-study/configs/qc-overrides.toml
 ```
 
 `report` rebuilds views from saved records. `qc` replays the frozen manifest with

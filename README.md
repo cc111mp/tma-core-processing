@@ -16,31 +16,41 @@ Install once in an activated Python 3.11+ environment:
 python -m pip install -e '.[codecs]'
 ```
 
-For raw AF folders arranged like the company NAS, generate the initial manifest
-directly from the folder root:
+The examples below use one dataset directory, `/data/tma-study`. Replace it with
+your location. For raw AF folders arranged like the company NAS, generate the
+initial manifest directly from the folder root:
 
 ```bash
-python -m tma_qc import-folder --raw-root /data/TMA_raw/2026 --out /data/manifests/manifest.json
+python -m tma_qc import-folder \
+  --raw-root /data/tma-study/raw \
+  --out /data/tma-study/manifests/manifest.json
 ```
 
 This discovers slides, cores, acquisitions and lamp groups and hashes the selected
-raw tiles. Review completeness and model assignments, add geometry, and supply
-explicit H&E pairs when needed. The [input guide](examples/README.md) describes
-the supported layouts and remaining assignments.
+raw tiles. Before the first run, review completeness, assign compatible frozen
+correction models and add native tile positions or configured MIST geometry.
+The [input guide](examples/README.md) shows these assignments. Add
+[explicit H&E pairs](#register-paired-he-cores) when registration is needed.
 
-A [manifest](examples/README.md) describes the input files, core identities,
-correction models and tile positions. A [configuration](configs/af2048.toml)
-holds processing settings, including the local SSD cache location. Run with:
+Copy the starting configuration and set `runtime.cache_root` to a local SSD
+location outside the raw archive:
+
+```bash
+mkdir -p /data/tma-study/configs
+cp configs/af2048.toml /data/tma-study/configs/af.toml
+```
+
+Run the prepared manifest with that configuration:
 
 ```bash
 python -m tma_qc run \
-  --manifest /data/manifest.json \
-  --config /data/af.toml \
-  --out /results/run_001 \
+  --manifest /data/tma-study/manifests/manifest.json \
+  --config /data/tma-study/configs/af.toml \
+  --out /data/tma-study/runs/run01 \
   --resume
 ```
 
-Open `/results/run_001/reports/index.html` for the core images and QC evidence.
+Open `/data/tma-study/runs/run01/reports/index.html` for the core images and QC evidence.
 Repeat the command to resume compatible verified work. Add `--core CORE_UID`
 to process one core; repeat that option to select several. Omit it to process
 all manifest cores. `tma-qc` is the shorter equivalent of `python -m tma_qc`.
@@ -56,9 +66,9 @@ For scripts and notebooks, import the same runner:
 from tma_qc.api import run
 
 summary = run(
-    manifest="/data/manifest.json",
-    output="/results/run_001",
-    config="/data/af.toml",
+    manifest="/data/tma-study/manifests/manifest.json",
+    output="/data/tma-study/runs/run01",
+    config="/data/tma-study/configs/af.toml",
     resume=True,
 )
 print(summary["execution_errors"], summary["blocked_stages"])
@@ -71,12 +81,19 @@ separate in either interface.
 
 ## Choose methods and parameters
 
-Defaults work for the supported input profile. Inspect method choices with
-`tma-qc methods`, then select a method and override individual settings:
+Inspect method choices and the settings you intend to use before processing:
 
 ```bash
-tma-qc run --manifest /data/manifests/paired.json --config /data/configs/af.toml \
-  --out /results/geometry-sift --registration-method geometry_sift \
+tma-qc methods
+tma-qc settings --config /data/tma-study/configs/af.toml --set tile_qc.stride=128
+```
+
+`settings` prints validated configuration as JSON without opening images or
+creating a run. Select a method and pass the same overrides to `run`:
+
+```bash
+tma-qc run --manifest /data/tma-study/manifests/paired.json --config /data/tma-study/configs/af.toml \
+  --out /data/tma-study/runs/geometry-sift --registration-method geometry_sift \
   --set tile_qc.stride=128 --set registration.matching.max_dimension=1024 --resume
 ```
 
@@ -106,9 +123,9 @@ shows how to find the exact AF UID.
 
 ```bash
 python -m tma_qc import-pairs \
-  --manifest /data/manifests/manifest.json \
-  --pairs /data/pairing/sections.csv \
-  --out /data/manifests/paired.json
+  --manifest /data/tma-study/manifests/manifest.json \
+  --pairs /data/tma-study/pairing/sections.csv \
+  --out /data/tma-study/manifests/paired.json
 ```
 
 The command hashes H&E sources and writes the paired manifest; users do not fill
@@ -174,6 +191,13 @@ availability and reasons for abstention. These measurements are not calibrated
 to reproduce the historical Excel decisions; see the [common-error review](docs/REVIEW_20261022.md).
 
 ## Find what you need
+
+| Task | Command |
+| --- | --- |
+| Inspect effective settings | `tma-qc settings --config /data/tma-study/configs/af.toml` |
+| Check readiness without processing | `tma-qc plan --manifest /data/tma-study/manifests/manifest.json --config /data/tma-study/configs/af.toml --out /data/tma-study/runs/run01` |
+| Rebuild a saved report | `tma-qc report --run /data/tma-study/runs/run01` |
+| Reevaluate QC with saved inputs | `tma-qc qc --run /data/tma-study/runs/run01` |
 
 | Task | Start here |
 | --- | --- |

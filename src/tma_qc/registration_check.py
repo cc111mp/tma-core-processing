@@ -169,6 +169,8 @@ def check_core(core_dir: Path, settings: dict) -> dict:
                 add(CHECK, "missing or invalid matched-feature count")
             elif matches < r["min_matches"]:
                 add(CHECK, f"only {matches} matched features")
+        else:
+            add(CHECK, "missing registration_log.csv (matched-feature count unavailable)")
 
         if "postcrop_eval_result.txt" in names:
             ev = read_eval(reg / "postcrop_eval_result.txt")

@@ -8,12 +8,33 @@ from __future__ import annotations
 
 import json
 from argparse import Namespace
+from collections import Counter
 from pathlib import Path
 
 
 def _execution_exit_code(summary):
     """CLI status for execution only: 0 complete, 1 error, 2 blocked."""
     return 1 if summary["execution_errors"] else 2 if summary["blocked_stages"] else 0
+
+
+def _print_run_summary(summary, output):
+    """Point to the saved report and describe execution and image quality separately."""
+    from .qc.assessment import quality_status
+
+    rows = summary.get("stage_results")
+    complete = ""
+    if rows is not None:
+        counts = Counter(row["execution"] for row in rows)
+        complete = f"{counts['complete']} complete, "
+    errors = summary["execution_errors"]
+    error_label = "error" if errors == 1 else "errors"
+    print(
+        f"Processing stages: {complete}{errors} {error_label}, {summary['blocked_stages']} blocked."
+    )
+    quality = quality_status(rows or [])
+    label = {"review": "review required", "not_assessed": "not assessed"}.get(quality, quality)
+    print(f"Image quality: {label}.")
+    print(f"Report: {Path(output).resolve() / 'reports/index.html'}")
 
 
 def _settings_options(args):
@@ -57,7 +78,16 @@ def list_methods(args: Namespace) -> int:
     print("\nOverride precedence: " + " → ".join(registry["precedence"]))
     for note in registry["notes"]:
         print(note)
-    print("Use run/plan/qc --help for method flags and repeated --set SECTION.KEY=VALUE.")
+    print("Use run/plan/qc/settings --help for method flags and repeated --set SECTION.KEY=VALUE.")
+    return 0
+
+
+def show_settings(args: Namespace) -> int:
+    """Print the validated effective configuration without touching image inputs."""
+    from .api import settings
+
+    config = settings(args.config, **_settings_options(args))
+    print(json.dumps(config, indent=2, allow_nan=False))
     return 0
 
 
@@ -73,7 +103,7 @@ def run_preprocessing(args: Namespace) -> int:
         selected=args.core,
         **_settings_options(args),
     )
-    print(f"Report: {Path(args.out).resolve() / 'reports/index.html'}")
+    _print_run_summary(summary, args.out)
     return _execution_exit_code(summary)
 
 
@@ -118,12 +148,11 @@ def import_pairs(args: Namespace) -> int:
 
 def preflight(args: Namespace) -> int:
     """Print source/asset/capacity readiness without processing images."""
-    from .io.manifest import Manifest
-    from .preflight import check
-    from .settings import resolve_settings
+    from .api import plan
 
-    config = resolve_settings(args.config, **_settings_options(args))
-    result = check(Manifest(args.manifest), config, args.out, args.core)
+    result = plan(
+        args.manifest, args.out, args.config, selected=args.core, **_settings_options(args)
+    )
     print(json.dumps(result, indent=2, allow_nan=False))
     return 0 if result["ready_for_execution"] else 2
 
@@ -161,6 +190,7 @@ def reevaluate_qc(args: Namespace) -> int:
         result = runner.run(record.get("selected_cores"))
     finally:
         runner.state.close()
+    _print_run_summary(result, root)
     return _execution_exit_code(result)
 
 

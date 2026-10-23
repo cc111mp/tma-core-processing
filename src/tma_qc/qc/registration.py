@@ -70,6 +70,14 @@ def transform_asset_paths(path):
 
 
 def evaluate_landmarks(matrix, path, tolerance=20.0, minimum=5, *, af_shape=None, he_shape=None):
+    """Evaluate a fitted H&E-to-AF transform against held-out native XY points.
+
+    ``path`` is an evaluation-only JSON/CSV, or ``None`` when unavailable.
+    Error is Euclidean distance in native AF pixels; image shapes are height/width
+    bounds for the original native points. The minimum point count and p95 error
+    tolerance set a provisional flag, while dense correspondence stays unvalidated.
+    These points are consumed after fitting and never select a transform.
+    """
     if not path:
         return {
             "independent_evaluation_available": False,
