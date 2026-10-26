@@ -52,7 +52,7 @@ def check(manifest, config, output=None, selected=None):
                 {
                     "scope": label,
                     "check": "location",
-                    "reason": "Pass --out for an operational storage preflight",
+                    "reason": "Supply an output location (--out in the CLI) for an operational storage preflight",
                 }
             )
             continue

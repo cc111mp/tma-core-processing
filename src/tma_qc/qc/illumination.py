@@ -68,6 +68,14 @@ def _signal_diagnostics(raw, corrected, reader, max_sample=256):
 
 
 def evaluate_correction(raw, corrected, positions, *, reader=None, raw_measurements=None):
+    """Compare corresponding FOV counts on geometry and support frozen from raw.
+
+    Frame dictionaries map the same FOV IDs to raw or corrected image paths;
+    positions use native AF pixels. Eligible overlap pairs and sampled support
+    stay fixed before/after correction. Relative mean mismatch is dimensionless;
+    matched-pixel absolute differences retain count units. Excluded pairs remain
+    unknown, so pair assessment coverage does not establish tissue coverage.
+    """
     reader = reader or read_image
     masks, selection = raw_support_masks(raw, positions, reader=reader)
     before = evaluate_overlaps(

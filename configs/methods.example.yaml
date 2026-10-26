@@ -1,0 +1,102 @@
+# Portable tma-qc engine settings. See docs/SETTINGS.md and docs/STAGES.md.
+# Inspect: tma-qc settings --config configs/methods.example.yaml --format yaml
+# Run: tma-qc run --manifest /data/tma-study/manifests/manifest.json \
+#        --config configs/methods.example.yaml --out /data/tma-study/runs/baseline
+#
+# Deliberate baseline choices: supplied positions and NO illumination correction.
+# The package default is cidre; it requires frozen, compatible fields in the
+# manifest's correction group. Set cidre only when those assets are prepared.
+# This file does not infer unknown scan order or establish scientific acceptance.
+# Manifest, selected cores and output folder are CLI inputs, not YAML keys.
+
+profile:
+  shape: [2048, 2048]       # Native raw height, width in pixels; each >= 8.
+  dtype: uint16            # Current raw AF profile supports uint16 only.
+
+runtime:
+  cache_root: /tmp/tma-qc  # Replace with local SSD scratch, outside the raw archive.
+  threads: 2               # OpenCV threads, not acquisition/batch workers.
+  decoded_cache_bytes: 536870912  # 512 MiB retained decoded arrays per core; 0 disables.
+  tile_workers: 4          # Concurrent detail workers; 1 is serial.
+
+storage:
+  reserve_bytes: 268435456 # 256 MiB free-space reserve.
+  safety_factor: 1.2       # Capacity-estimate multiplier; must be >= 1.
+
+tile_qc:
+  window: 256              # Native detail-window side, pixels; >= 8.
+  stride: 256              # Native sampling step; smaller adds windows and cost.
+  prefilter_sigma: 1.0     # Gaussian scale in native pixels, positive.
+
+geometry:
+  backend: provided        # provided | mist. Supplied positions always win.
+  downsample: 4            # MIST-only reduction factor; native output is restored.
+  mist_classpath: ""       # MIST-only explicit Java classpath; no automatic download.
+  timeout_seconds: 1800    # MIST-only external runtime limit, seconds.
+
+illumination:
+  mode: none               # Explicit uncorrected baseline; cidre uses frozen fields.
+
+mosaic:
+  alpha: 1.5               # Positive exponent on native linear blend weights.
+  chunk_rows: 256          # Row-band size; changes bounded work, not pixel spacing.
+  max_pixels: 500000000    # Native canvas allocation guard; not a resize target.
+
+tissue:
+  quantile: 0.2            # Provisional background reference quantile in [0, 1].
+  mad_multiplier: 6.0      # Nonnegative strong-threshold multiplier.
+
+registration:
+  backend: provided        # Only runs for explicit pairs; requires supplied transform.
+  core_method: geometry_sift  # Inactive until backend: core; sift | orb | geometry_roma.
+  core_config: ""          # Optional external research TOML, resolved beside this file.
+  export_aligned_he: true  # Export native aligned H&E after successful registration.
+
+  # Legacy sift_affine-only parameters; inactive for provided/core backends.
+  max_dimension: 1536      # Working-view size limit, pixels; integer >= 3.
+  min_matches: 12          # Required matches/inliers; integer >= 3.
+  ransac_pixels: 3.0       # RANSAC tolerance in the legacy working view, pixels.
+
+  # Core-only presets; active after selecting backend: core.
+  matching:
+    max_dimension: 1024   # Core working-view limit, pixels; integer 64..4096.
+    rotations: [0, 90, 180, 270] # Degree hypotheses for geometry initializers.
+    feature_view: gradient # gradient | intensity.
+    transform: similarity # similarity | affine (permits unequal scale/shear).
+    max_matches: 3000      # Feature/match budget, integer 12..20000.
+    ratio: 0.75           # Descriptor ratio for SIFT/ORB, strictly between 0 and 1.
+    ransac_view_pixels: 4.0 # Consensus tolerance in the core working view.
+    min_inliers: 12       # Integer >= 3.
+    min_inlier_fraction: 0.2 # Fraction in (0, 1].
+    min_hull_coverage: 0.08 # Match-hull coverage in (0, 1].
+    max_anisotropy: 1.4   # Unequal scale guard, >= 1.
+    min_relative_scale: 0.4 # Lower scale guard in (0, 1].
+    max_relative_scale: 2.5 # Upper scale guard, >= 1.
+    ambiguity_score_fraction: 0.1 # Competing-candidate score band in [0, 1).
+    ambiguity_view_pixels: 8.0 # Candidate disagreement distance, working-view pixels.
+
+  refinement:
+    backend: none         # none | bspline_mi; latter needs registration-refine extra.
+    mesh_size: 6          # B-spline-only integer 2..16.
+    iterations: 50        # B-spline-only integer 1..500.
+    max_displacement_view_pixels: 12.0 # Local displacement guard.
+    min_jacobian: 0.25    # Computed-map lower Jacobian guard in (0, 1).
+    support_taper_view_pixels: 16.0 # Local support taper distance.
+
+  roma:
+    device: auto          # geometry_roma only; auto | cpu | cuda | cuda:0.
+    coarse_resolution: 560 # Integer >= 112 and divisible by 14.
+    upsample_resolution: 864 # Integer >= 112; requires extra and cached weights.
+
+qc:
+  landmark_tolerance_pixels: 20.0 # Provisional tolerance in native AF pixels.
+  minimum_landmarks: 5    # Minimum for provisional tolerance assessment.
+
+artifact_qc:
+  evidence_pairs: 4        # Maximum ranked overlap examples; not an acceptance limit.
+  crop_size: 256           # Evidence crop side in native pixels; >= 8.
+  boundary_band_pixels: 8 # Seam evidence band width, positive pixels.
+
+report:
+  preview_size: 1024       # Preview limit, pixels; native TIFF resolution is unchanged.
+  slide_tile: 160          # Batch montage tile limit, pixels.

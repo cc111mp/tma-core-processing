@@ -78,7 +78,14 @@ def _cut(raw, corrected, coverage, bbox, axis, cut, band, threshold, scale):
 
 
 def evaluate_boundaries(raw, corrected, coverage, positions, tile_shape, band=8):
-    """Inspect native strips; never allocate another full-resolution canvas."""
+    """Compare steps at native overlap midlines and nearby control cuts.
+
+    Raw/corrected mosaics share geometry and a coverage map. ``band`` is the
+    width in native pixels on each side of a cut; ``tile_shape`` is height/width.
+    Signal strata and the normalization range come from raw counts. Results
+    retain per-seam tails and locations, rather than an affected-area estimate.
+    Work uses bounded strips instead of another full-resolution canvas.
+    """
     if raw.ndim != 2 or corrected.shape != raw.shape or coverage.shape != raw.shape:
         raise ValueError("Boundary QC requires matching 2D raw, corrected and coverage images")
     if type(band) is not int or band < 1:

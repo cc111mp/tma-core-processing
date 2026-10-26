@@ -4,6 +4,34 @@ The package supports exploratory research with explicit inputs and reviewable
 outputs. Start with [workflows.py](../src/tma_qc/workflows.py) to see stage order,
 then follow a stage into `backends/` or `qc/` for the image calculation.
 
+## Follow one operation through the code
+
+For an ordinary run, read these modules in order:
+
+1. [cli.py](../src/tma_qc/cli.py) declares arguments;
+   [commands.py](../src/tma_qc/commands.py) calls the application operation.
+   [api.py](../src/tma_qc/api.py) exposes the same operations to Python callers.
+2. [workflows.py](../src/tma_qc/workflows.py) declares the AF and pair stages,
+   dependencies and configuration sections. [pipeline.py](../src/tma_qc/pipeline.py)
+   executes them with receipts, verification and failure isolation.
+3. Follow a stage such as [illumination.py](../src/tma_qc/stages/illumination.py)
+   into its [correction backend](../src/tma_qc/backends/cidre.py) and
+   [QC calculation](../src/tma_qc/qc/illumination.py).
+4. [assessment.py](../src/tma_qc/qc/assessment.py) summarizes measurement
+   availability; [core.py](../src/tma_qc/reporting/core.py) and
+   [batch.py](../src/tma_qc/reporting/batch.py) present the saved evidence.
+
+Use `tma-qc stages` and the [stage map](STAGES.md) to connect an operation to its
+dependencies, settings and saved products. `tma-qc methods` lists supported
+choices. Inspect validated configuration while reading a method:
+
+```bash
+tma-qc settings --config configs/methods.example.yaml --format yaml
+```
+
+The [test map](../tests/README.md) locates the corresponding controls. Inspection
+must work without imaging extras, images or output-directory creation.
+
 ## Readable research code
 
 Use names that describe the image or operation, and keep functions focused on
@@ -60,6 +88,7 @@ python3 -m unittest tests.test_transfer_check tests.test_registration_check
 | --- | --- | --- |
 | `cli.py` | Options, dispatch and command error boundary | Image processing |
 | `commands.py` | Application command handlers | Numerical method implementations |
+| `api.py` | Public manifest import, settings, readiness and run entry points | CLI parsing and image calculations |
 | `settings.py` | Inspectable method registry, selectors and typed parameter overrides | Image processing and runtime downloads |
 | `registration_config.py` | Pure core configuration, schema and resolution | Optional imaging/runtime imports |
 | `workflows.py` | AF/pair stage order, dependencies and deferred input identities | Checkpoint implementation |
@@ -91,7 +120,8 @@ Implementation belongs under `src/tma_qc/`; do not duplicate it in the shim.
    same selector resolver. Preserve the stage output contract, input identities
    and QC evidence when adding a backend. Method metadata/help/configuration
    inspection must work before imaging extras are installed.
-7. Update [settings](SETTINGS.md), methods documentation, tutorial examples and
+7. Update stage metadata/help, the [stage map](STAGES.md),
+   [settings](SETTINGS.md), annotated YAML/TOML, methods documentation, tutorial examples and
    [CHANGELOG.md](CHANGELOG.md).
    Record verification evidence and any scientific limits in
    [VALIDATION.md](VALIDATION.md).
@@ -99,6 +129,29 @@ Implementation belongs under `src/tma_qc/`; do not duplicate it in the shim.
 Use `NeedsInput` for recoverable missing prerequisites. Other exceptions become
 execution errors inside a stage. An execution `complete` status is independent of
 the `Payload.qc` quality state; keep scientific acceptance assumptions explicit.
+
+## Configuration contracts
+
+Main YAML and TOML resolve to the same validated settings dictionary. Keep file
+loading independent of image imports; both formats, Python `parameters` and
+CLI `--set` must reach the same validation and method selector resolver. Preserve
+precedence: defaults, optional saved base, main file, typed overrides, then
+explicit method selectors. `settings --format yaml` must produce settings that
+can be read back as a main configuration.
+
+Document every exposed parameter's default, type/range, units, active backend
+and effect. Mark fixed methods as fixed instead of adding selector names without
+an implementation. A valid preset can be inactive under the current backend;
+distinguish legacy registration keys from core matching keys. Stage metadata is
+an inspection contract; execution dependencies and receipts remain owned by the
+workflow/runner. Keep metadata aligned with actual stage calls.
+
+Portable engine settings contain parameter sections at their root. Study-specific
+workspace wrappers may also own dataset selection, geometry preparation or
+execution policy. Those wrapper schemas and inferred-layout algorithms are
+separate from the engine configuration and must not be implied by YAML support.
+Inputs remain explicit manifest contracts; configuration is not a substitute
+for source identity, reviewed scan order, overlap metadata or independent QC.
 
 ## Reproducibility and performance
 

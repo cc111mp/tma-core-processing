@@ -16,31 +16,41 @@ Install once in an activated Python 3.11+ environment:
 python -m pip install -e '.[codecs]'
 ```
 
-For raw AF folders arranged like the company NAS, generate the initial manifest
-directly from the folder root:
+The examples below use one dataset directory, `/data/tma-study`. Replace it with
+your location. For raw AF folders arranged like the company NAS, generate the
+initial manifest directly from the folder root:
 
 ```bash
-python -m tma_qc import-folder --raw-root /data/TMA_raw/2026 --out /data/manifests/manifest.json
+python -m tma_qc import-folder \
+  --raw-root /data/tma-study/raw \
+  --out /data/tma-study/manifests/manifest.json
 ```
 
 This discovers slides, cores, acquisitions and lamp groups and hashes the selected
-raw tiles. Review completeness and model assignments, add geometry, and supply
-explicit H&E pairs when needed. The [input guide](examples/README.md) describes
-the supported layouts and remaining assignments.
+raw tiles. Before the first run, review completeness, assign compatible frozen
+correction models and add native tile positions or configured MIST geometry.
+The [input guide](examples/README.md) shows these assignments. Add
+[explicit H&E pairs](#register-paired-he-cores) when registration is needed.
 
-A [manifest](examples/README.md) describes the input files, core identities,
-correction models and tile positions. A [configuration](configs/af2048.toml)
-holds processing settings, including the local SSD cache location. Run with:
+Copy the starting configuration and set `runtime.cache_root` to a local SSD
+location outside the raw archive:
+
+```bash
+mkdir -p /data/tma-study/configs
+cp configs/af2048.toml /data/tma-study/configs/af.toml
+```
+
+Run the prepared manifest with that configuration:
 
 ```bash
 python -m tma_qc run \
-  --manifest /data/manifest.json \
-  --config /data/af.toml \
-  --out /results/run_001 \
+  --manifest /data/tma-study/manifests/manifest.json \
+  --config /data/tma-study/configs/af.toml \
+  --out /data/tma-study/runs/run01 \
   --resume
 ```
 
-Open `/results/run_001/reports/index.html` for the core images and QC evidence.
+Open `/data/tma-study/runs/run01/reports/index.html` for the core images and QC evidence.
 Repeat the command to resume compatible verified work. Add `--core CORE_UID`
 to process one core; repeat that option to select several. Omit it to process
 all manifest cores. `tma-qc` is the shorter equivalent of `python -m tma_qc`.
@@ -56,9 +66,9 @@ For scripts and notebooks, import the same runner:
 from tma_qc.api import run
 
 summary = run(
-    manifest="/data/manifest.json",
-    output="/results/run_001",
-    config="/data/af.toml",
+    manifest="/data/tma-study/manifests/manifest.json",
+    output="/data/tma-study/runs/run01",
+    config="/data/tma-study/configs/af.toml",
     resume=True,
 )
 print(summary["execution_errors"], summary["blocked_stages"])
@@ -71,28 +81,54 @@ separate in either interface.
 
 ## Choose methods and parameters
 
-Defaults work for the supported input profile. Inspect method choices with
-`tma-qc methods`, then select a method and override individual settings:
+Inspect method choices and the settings you intend to use before processing:
 
 ```bash
-tma-qc run --manifest /data/manifests/paired.json --config /data/configs/af.toml \
-  --out /results/geometry-sift --registration-method geometry_sift \
+tma-qc stages
+tma-qc methods
+tma-qc settings --config /data/tma-study/configs/af.toml --set tile_qc.stride=128
+```
+
+`stages` connects inputs, outputs and parameter sections across the nine AF and
+three explicit-pair stages. `methods` lists implemented choices and prerequisites.
+Both also accept `--json`. `settings` prints validated configuration without
+opening images or creating a run.
+
+Main settings accept YAML or TOML. The [annotated YAML](configs/methods.example.yaml)
+includes every main parameter section and marks which settings require a specific
+backend. It deliberately uses `illumination.mode: none` for an original-count
+baseline with supplied positions; the package default `cidre` requires compatible
+frozen model assets. Inspect it as YAML:
+
+```bash
+tma-qc settings --config configs/methods.example.yaml --format yaml
+```
+
+Select a method and pass the same overrides to `run`:
+
+```bash
+tma-qc run --manifest /data/tma-study/manifests/paired.json --config /data/tma-study/configs/af.toml \
+  --out /data/tma-study/runs/geometry-sift --registration-method geometry_sift \
   --set tile_qc.stride=128 --set registration.matching.max_dimension=1024 --resume
 ```
 
 The Python equivalent uses `registration_method="geometry_sift"` and
 `parameters={"tile_qc": {"stride": 128}, "registration": {"matching": {"max_dimension": 1024}}}`
 in `run()`. `tma_qc.api.settings()` inspects validated settings without processing
-images. Precedence is defaults → TOML → parameter overrides → method selectors.
+images. Precedence is defaults → YAML/TOML → parameter overrides → method selectors.
 `plan` accepts the same options. `run --resume` uses the settings supplied again
 on that invocation.
 
-Advanced core matching and refinement can live in the main TOML under
-`[registration.matching]`, `[registration.refinement]` and `[registration.roma]`.
+Advanced core matching and refinement can live in the main settings file under
+`registration.matching`, `registration.refinement` and `registration.roma`.
 Existing external core TOMLs remain supported. Supplied geometry and pair
 transforms retain precedence over estimation/fitting. See the complete
 [methods and settings reference](docs/SETTINGS.md) for defaults, units,
 requirements, CLI/Python examples and the [annotated TOML](configs/methods.example.toml).
+The [stage map](docs/STAGES.md) explains each operation and its parameter effects.
+The portable engine YAML contains settings only; manifest, output and core
+selection remain CLI arguments. It is a different schema from the GX10 workspace
+wrapper YAML, whose study-specific numbered-tile preparation is not included here.
 
 ## Register paired H&E cores
 
@@ -106,9 +142,9 @@ shows how to find the exact AF UID.
 
 ```bash
 python -m tma_qc import-pairs \
-  --manifest /data/manifests/manifest.json \
-  --pairs /data/pairing/sections.csv \
-  --out /data/manifests/paired.json
+  --manifest /data/tma-study/manifests/manifest.json \
+  --pairs /data/tma-study/pairing/sections.csv \
+  --out /data/tma-study/manifests/paired.json
 ```
 
 The command hashes H&E sources and writes the paired manifest; users do not fill
@@ -175,10 +211,21 @@ to reproduce the historical Excel decisions; see the [common-error review](docs/
 
 ## Find what you need
 
+| Task | Command |
+| --- | --- |
+| Understand stages, parameters and dependencies | `tma-qc stages` |
+| List implemented method choices and requirements | `tma-qc methods` |
+| Inspect effective settings | `tma-qc settings --config /data/tma-study/configs/af.toml` |
+| Inspect effective settings as YAML | `tma-qc settings --config configs/methods.example.yaml --format yaml` |
+| Check readiness without processing | `tma-qc plan --manifest /data/tma-study/manifests/manifest.json --config /data/tma-study/configs/af.toml --out /data/tma-study/runs/run01` |
+| Rebuild a saved report | `tma-qc report --run /data/tma-study/runs/run01` |
+| Reevaluate QC with saved inputs | `tma-qc qc --run /data/tma-study/runs/run01` |
+
 | Task | Start here |
 | --- | --- |
 | Learn the default folders, generate a manifest and run a first core | [Getting started (PDF)](docs/tutorial/TMA_QC_User_Guide.pdf) |
 | Prepare inputs, run a pilot, inspect outputs, reproduce an experiment | [Research guide](docs/RESEARCH_GUIDE.md) |
+| Follow each stage's inputs, outputs, dependencies and settings | [Stage map](docs/STAGES.md) |
 | Select methods, tune parameters and inspect defaults | [Methods and settings](docs/SETTINGS.md) |
 | Generate a manifest from NAS-style raw AF folders | [Folder import](examples/README.md#generate-a-manifest-from-nas-style-folders) |
 | Process a complete AF core before the bulk raw copy finishes | [Source-first recipe](docs/source-first.md) |
@@ -211,7 +258,7 @@ src/tma_qc/
   io/                   # Manifests, images, coordinates and raw tile caching
   reporting/            # Offline core, slide and batch review pages
 tests/                  # Unit, integration, scientific and legacy controls
-configs/                # TOML starting points and QC overrides
+configs/                # YAML/TOML starting points and QC overrides
 examples/               # Input templates and the source-first AF recipe
 experiments/            # Scientific investigations outside the production path
 docs/                   # Research, methods, development and validation guides

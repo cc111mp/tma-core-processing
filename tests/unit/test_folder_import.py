@@ -2,6 +2,7 @@
 
 import hashlib
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -95,7 +96,7 @@ def test_identity_matches_transfer_import_and_hashes_only_selected_tiles(tmp_pat
     direct = folder.import_raw_folder(root, tmp_path / "folder.json")
     assert hashed == [selected.relative_to(root).as_posix()]
     database = tmp_path / "inventory.sqlite3"
-    with sqlite3.connect(database) as db:
+    with closing(sqlite3.connect(database)) as db, db:
         db.execute("CREATE TABLE meta (key TEXT,value TEXT)")
         db.execute("INSERT INTO meta VALUES ('inventory_complete','true')")
         db.execute(

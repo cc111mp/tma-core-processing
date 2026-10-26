@@ -132,14 +132,20 @@ def method_registry():
         "fixed_pair_stages": list(PAIR_STAGES),
         "fixed_algorithms": deepcopy(FIXED_ALGORITHMS),
         "core_default_method": "geometry_sift",
-        "precedence": ["defaults", "saved base", "TOML", "parameters / --set", "method selectors"],
+        "precedence": [
+            "defaults",
+            "saved base",
+            "TOML / YAML",
+            "parameters / --set",
+            "method selectors",
+        ],
         "notes": [
             "Registration runs only for explicitly assigned section pairs.",
             "A core's supplied native positions take precedence over geometry estimation.",
             "The default registration route is provided; the default core initializer is geometry_sift.",
             "Core transform/refinement defaults apply when a core method is selected.",
             "A pair's supplied transform takes precedence over registration fitting.",
-            "Generic parameter dictionaries and TOML can retain presets; only active backend settings apply.",
+            "Configuration files and parameter dictionaries can retain inactive backend presets.",
             "QC remains advisory; method selection does not certify scientific quality.",
         ],
     }
@@ -211,7 +217,7 @@ def resolve_settings(
     registration_refinement=None,
     base=None,
 ):
-    """Resolve defaults → base → TOML → typed parameters → explicit method selectors.
+    """Resolve defaults → base → TOML/YAML → parameters → explicit method selectors.
 
     Return a validated configuration without opening images or creating outputs.
     Core-file and optional-runtime prerequisites are checked by plan/run.

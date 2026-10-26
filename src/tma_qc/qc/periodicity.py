@@ -190,6 +190,14 @@ def _measurement(axis, stratum, counts, sums, pitch, region, shape, size):
 
 
 def evaluate_periodicity(raw, corrected, coverage, positions, tile_shape, size=1024):
+    """Fit tile-pitch harmonics to native global and local intensity projections.
+
+    Raw/corrected mosaics share coverage and raw-defined signal strata. Geometry
+    supplies pitch in native pixels. Fits report amplitudes in counts and the
+    fraction of detrended variation explained by three harmonics. ``size`` only
+    limits serialized display profiles; fits always use native bins. Unsupported
+    or ambiguous layouts abstain, and fitted patterns require anatomical review.
+    """
     if raw.ndim != 2 or corrected.shape != raw.shape or coverage.shape != raw.shape:
         raise ValueError("Periodicity QC requires matching 2D reconstructions and coverage")
     if type(size) is not int or size < 1:

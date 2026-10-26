@@ -2,6 +2,7 @@
 
 import csv
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,7 @@ from tma_qc.io.section_pairs import import_section_pairs
 
 
 def inventory(path, *, empty=False):
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         db.execute("CREATE TABLE meta (key TEXT,value TEXT)")
         db.execute("INSERT INTO meta VALUES ('inventory_complete','true')")
         db.execute(
@@ -77,7 +78,7 @@ def test_transfer_import_rejects_raw_output_and_invalid_manifest_before_writing(
     with pytest.raises(ValueError, match="outside the raw archive"):
         import_copy_inventory(database, raw, raw / "manifest.json")
     assert not raw.exists()
-    with sqlite3.connect(database) as db:
+    with closing(sqlite3.connect(database)) as db, db:
         db.execute("UPDATE entries SET path='slide..invalid/A1/stitch/FOV_1.tif'")
     output = tmp_path / "invalid.json"
     with pytest.raises(ValueError, match="identifier"):
