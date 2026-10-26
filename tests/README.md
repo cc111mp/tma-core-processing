@@ -5,6 +5,15 @@ root. Tests create their inputs in temporary directories; they do not require NA
 access, a transfer inventory or real study images. MIST calls are simulated where
 needed rather than launching a real stitcher.
 
+`unit/test_yaml_configuration.py` covers strict YAML parsing, type preservation,
+duplicate keys, unsafe constructs, file precedence and relative core-TOML paths.
+`unit/test_stage_catalog.py` compares advertised contracts with executable stage
+declarations. `integration/test_yaml_settings.py` checks CLI/API settings parity,
+inspection without imaging imports or writes, reusable YAML output, a real
+synthetic twelve-stage AF/H&E run with identical native TIFF pixels, source
+preservation and verified resume. Stage catalog settings/dependencies are also
+checked against the resulting execution receipts.
+
 | Directory | Purpose | Representative controls |
 | --- | --- | --- |
 | `unit/` | Input contracts, helpers and failure boundaries | Native coordinate declarations, file identity, source hashes, cache recovery, capacity guards, bounded workers, native H&E decoding |

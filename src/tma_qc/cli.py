@@ -42,7 +42,8 @@ def build_parser() -> argparse.ArgumentParser:
             "  tma-qc demo --out /tmp/tma-qc-demo\n"
             "  tma-qc import-folder --raw-root /data/TMA_raw --out /data/manifest.json\n"
             "  tma-qc run --manifest /data/manifest.json --out /results/run_001 --resume\n"
-            "\nInspect choices with 'tma-qc methods' and effective values with 'tma-qc settings'.\n"
+            "\nInspect stages with 'tma-qc stages', choices with 'tma-qc methods',\n"
+            "and effective values with 'tma-qc settings --format yaml'.\n"
             "Use 'tma-qc COMMAND --help' for command options."
         ),
     )
@@ -54,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="Open OUT/reports/index.html for images, QC measurements and review evidence.",
     )
     run.add_argument("--manifest", required=True, help="Prepared input manifest JSON")
-    run.add_argument("--config", help="TOML settings; omitted values use built-in defaults")
+    run.add_argument("--config", help="TOML or YAML settings; omitted values use built-in defaults")
     run.add_argument("--out", required=True, help="Run directory outside the raw archive")
     run.add_argument(
         "--resume", action="store_true", help="Reuse unchanged stages after verifying saved outputs"
@@ -68,7 +69,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Check source hashes, assets, runtime prerequisites and AF capacity without processing",
     )
     plan.add_argument("--manifest", required=True, help="Prepared input manifest JSON")
-    plan.add_argument("--config", help="TOML settings; omitted values use built-in defaults")
+    plan.add_argument(
+        "--config", help="TOML or YAML settings; omitted values use built-in defaults"
+    )
     plan.add_argument(
         "--out", help="Planned output location, required for an operational readiness result"
     )
@@ -100,16 +103,27 @@ def build_parser() -> argparse.ArgumentParser:
         "qc", help="Resume with updated QC settings, retaining unchanged image artifacts"
     )
     qc.add_argument("--run", required=True, help="Existing run directory containing run.json")
-    qc.add_argument("--config", help="TOML overrides applied to the saved run configuration")
+    qc.add_argument(
+        "--config", help="TOML or YAML overrides applied to the saved run configuration"
+    )
     _method_options(qc)
     methods = sub.add_parser("methods", help="List methods, defaults and required inputs")
     methods.add_argument(
         "--json", action="store_true", dest="json_output", help="Print structured method metadata"
     )
-    settings = sub.add_parser(
-        "settings", help="Print effective settings as JSON without opening images or creating a run"
+    stages = sub.add_parser("stages", help="Explain stage inputs, outputs, parameters and methods")
+    stages.add_argument(
+        "--json", action="store_true", dest="json_output", help="Print structured stage contracts"
     )
-    settings.add_argument("--config", help="TOML settings; omitted values use built-in defaults")
+    settings = sub.add_parser(
+        "settings", help="Print effective settings without opening images or creating a run"
+    )
+    settings.add_argument(
+        "--config", help="TOML or YAML settings; omitted values use built-in defaults"
+    )
+    settings.add_argument(
+        "--format", choices=("json", "yaml"), default="json", help="Output format; default: json"
+    )
     _method_options(settings)
     demo = sub.add_parser("demo", help="Create and run an explicitly synthetic software example")
     demo.add_argument("--out", required=True)
@@ -132,6 +146,7 @@ def main(argv=None) -> int:
     handlers = {
         "run": commands.run_preprocessing,
         "methods": commands.list_methods,
+        "stages": commands.list_stages,
         "settings": commands.show_settings,
         "import-copy": commands.import_transfer,
         "import-folder": commands.import_folder,

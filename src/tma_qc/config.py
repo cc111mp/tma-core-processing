@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import tempfile
-import tomllib
 from copy import deepcopy
 from pathlib import Path
 
+from .configuration_io import read_configuration
 from .registration_config import inline_schema, is_finite_number, validate_inline_settings
 from .storage import DEFAULT_STORAGE
 
@@ -96,9 +96,9 @@ def _merge(config, supplied, schema, *, location="configuration"):
 def load_config(
     path: str | Path | None = None, *, base: dict | None = None, overrides: dict | None = None
 ) -> dict:
-    """Resolve built-in defaults → saved/base values → TOML → dictionary overrides.
+    """Resolve built-in defaults → base → TOML/YAML → dictionary overrides.
 
-    Inline core tables remain sparse. The external core TOML is inspected later
+    Inline core tables remain sparse. The external core file is inspected later
     by preflight/pair stages, preserving AF failure isolation when it is missing.
     """
     config = deepcopy(DEFAULTS)
@@ -110,8 +110,7 @@ def load_config(
     if base is not None:
         _merge(config, base, schema, location="base configuration")
     if path:
-        with Path(path).open("rb") as f:
-            supplied = tomllib.load(f)
+        supplied = read_configuration(path)
         _merge(config, supplied, schema)
         core_path_from_file = "core_config" in supplied.get("registration", {})
     if overrides is not None:

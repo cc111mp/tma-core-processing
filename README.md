@@ -84,12 +84,27 @@ separate in either interface.
 Inspect method choices and the settings you intend to use before processing:
 
 ```bash
+tma-qc stages
 tma-qc methods
 tma-qc settings --config /data/tma-study/configs/af.toml --set tile_qc.stride=128
 ```
 
-`settings` prints validated configuration as JSON without opening images or
-creating a run. Select a method and pass the same overrides to `run`:
+`stages` connects inputs, outputs and parameter sections across the nine AF and
+three explicit-pair stages. `methods` lists implemented choices and prerequisites.
+Both also accept `--json`. `settings` prints validated configuration without
+opening images or creating a run.
+
+Main settings accept YAML or TOML. The [annotated YAML](configs/methods.example.yaml)
+includes every main parameter section and marks which settings require a specific
+backend. It deliberately uses `illumination.mode: none` for an original-count
+baseline with supplied positions; the package default `cidre` requires compatible
+frozen model assets. Inspect it as YAML:
+
+```bash
+tma-qc settings --config configs/methods.example.yaml --format yaml
+```
+
+Select a method and pass the same overrides to `run`:
 
 ```bash
 tma-qc run --manifest /data/tma-study/manifests/paired.json --config /data/tma-study/configs/af.toml \
@@ -100,16 +115,20 @@ tma-qc run --manifest /data/tma-study/manifests/paired.json --config /data/tma-s
 The Python equivalent uses `registration_method="geometry_sift"` and
 `parameters={"tile_qc": {"stride": 128}, "registration": {"matching": {"max_dimension": 1024}}}`
 in `run()`. `tma_qc.api.settings()` inspects validated settings without processing
-images. Precedence is defaults → TOML → parameter overrides → method selectors.
+images. Precedence is defaults → YAML/TOML → parameter overrides → method selectors.
 `plan` accepts the same options. `run --resume` uses the settings supplied again
 on that invocation.
 
-Advanced core matching and refinement can live in the main TOML under
-`[registration.matching]`, `[registration.refinement]` and `[registration.roma]`.
+Advanced core matching and refinement can live in the main settings file under
+`registration.matching`, `registration.refinement` and `registration.roma`.
 Existing external core TOMLs remain supported. Supplied geometry and pair
 transforms retain precedence over estimation/fitting. See the complete
 [methods and settings reference](docs/SETTINGS.md) for defaults, units,
 requirements, CLI/Python examples and the [annotated TOML](configs/methods.example.toml).
+The [stage map](docs/STAGES.md) explains each operation and its parameter effects.
+The portable engine YAML contains settings only; manifest, output and core
+selection remain CLI arguments. It is a different schema from the GX10 workspace
+wrapper YAML, whose study-specific numbered-tile preparation is not included here.
 
 ## Register paired H&E cores
 
@@ -194,7 +213,10 @@ to reproduce the historical Excel decisions; see the [common-error review](docs/
 
 | Task | Command |
 | --- | --- |
+| Understand stages, parameters and dependencies | `tma-qc stages` |
+| List implemented method choices and requirements | `tma-qc methods` |
 | Inspect effective settings | `tma-qc settings --config /data/tma-study/configs/af.toml` |
+| Inspect effective settings as YAML | `tma-qc settings --config configs/methods.example.yaml --format yaml` |
 | Check readiness without processing | `tma-qc plan --manifest /data/tma-study/manifests/manifest.json --config /data/tma-study/configs/af.toml --out /data/tma-study/runs/run01` |
 | Rebuild a saved report | `tma-qc report --run /data/tma-study/runs/run01` |
 | Reevaluate QC with saved inputs | `tma-qc qc --run /data/tma-study/runs/run01` |
@@ -203,6 +225,7 @@ to reproduce the historical Excel decisions; see the [common-error review](docs/
 | --- | --- |
 | Learn the default folders, generate a manifest and run a first core | [Getting started (PDF)](docs/tutorial/TMA_QC_User_Guide.pdf) |
 | Prepare inputs, run a pilot, inspect outputs, reproduce an experiment | [Research guide](docs/RESEARCH_GUIDE.md) |
+| Follow each stage's inputs, outputs, dependencies and settings | [Stage map](docs/STAGES.md) |
 | Select methods, tune parameters and inspect defaults | [Methods and settings](docs/SETTINGS.md) |
 | Generate a manifest from NAS-style raw AF folders | [Folder import](examples/README.md#generate-a-manifest-from-nas-style-folders) |
 | Process a complete AF core before the bulk raw copy finishes | [Source-first recipe](docs/source-first.md) |
@@ -235,7 +258,7 @@ src/tma_qc/
   io/                   # Manifests, images, coordinates and raw tile caching
   reporting/            # Offline core, slide and batch review pages
 tests/                  # Unit, integration, scientific and legacy controls
-configs/                # TOML starting points and QC overrides
+configs/                # YAML/TOML starting points and QC overrides
 examples/               # Input templates and the source-first AF recipe
 experiments/            # Scientific investigations outside the production path
 docs/                   # Research, methods, development and validation guides

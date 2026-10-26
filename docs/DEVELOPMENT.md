@@ -21,8 +21,16 @@ For an ordinary run, read these modules in order:
    availability; [core.py](../src/tma_qc/reporting/core.py) and
    [batch.py](../src/tma_qc/reporting/batch.py) present the saved evidence.
 
-Use `tma-qc settings` to inspect validated configuration while reading a method,
-and the [test map](../tests/README.md) to locate its controls.
+Use `tma-qc stages` and the [stage map](STAGES.md) to connect an operation to its
+dependencies, settings and saved products. `tma-qc methods` lists supported
+choices. Inspect validated configuration while reading a method:
+
+```bash
+tma-qc settings --config configs/methods.example.yaml --format yaml
+```
+
+The [test map](../tests/README.md) locates the corresponding controls. Inspection
+must work without imaging extras, images or output-directory creation.
 
 ## Readable research code
 
@@ -112,7 +120,8 @@ Implementation belongs under `src/tma_qc/`; do not duplicate it in the shim.
    same selector resolver. Preserve the stage output contract, input identities
    and QC evidence when adding a backend. Method metadata/help/configuration
    inspection must work before imaging extras are installed.
-7. Update [settings](SETTINGS.md), methods documentation, tutorial examples and
+7. Update stage metadata/help, the [stage map](STAGES.md),
+   [settings](SETTINGS.md), annotated YAML/TOML, methods documentation, tutorial examples and
    [CHANGELOG.md](CHANGELOG.md).
    Record verification evidence and any scientific limits in
    [VALIDATION.md](VALIDATION.md).
@@ -120,6 +129,29 @@ Implementation belongs under `src/tma_qc/`; do not duplicate it in the shim.
 Use `NeedsInput` for recoverable missing prerequisites. Other exceptions become
 execution errors inside a stage. An execution `complete` status is independent of
 the `Payload.qc` quality state; keep scientific acceptance assumptions explicit.
+
+## Configuration contracts
+
+Main YAML and TOML resolve to the same validated settings dictionary. Keep file
+loading independent of image imports; both formats, Python `parameters` and
+CLI `--set` must reach the same validation and method selector resolver. Preserve
+precedence: defaults, optional saved base, main file, typed overrides, then
+explicit method selectors. `settings --format yaml` must produce settings that
+can be read back as a main configuration.
+
+Document every exposed parameter's default, type/range, units, active backend
+and effect. Mark fixed methods as fixed instead of adding selector names without
+an implementation. A valid preset can be inactive under the current backend;
+distinguish legacy registration keys from core matching keys. Stage metadata is
+an inspection contract; execution dependencies and receipts remain owned by the
+workflow/runner. Keep metadata aligned with actual stage calls.
+
+Portable engine settings contain parameter sections at their root. Study-specific
+workspace wrappers may also own dataset selection, geometry preparation or
+execution policy. Those wrapper schemas and inferred-layout algorithms are
+separate from the engine configuration and must not be implied by YAML support.
+Inputs remain explicit manifest contracts; configuration is not a substitute
+for source identity, reviewed scan order, overlap metadata or independent QC.
 
 ## Reproducibility and performance
 

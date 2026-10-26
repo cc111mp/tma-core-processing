@@ -10,6 +10,8 @@ how to process them.
 ```bash
 tma-qc methods
 tma-qc methods --json
+tma-qc stages
+tma-qc stages --json
 tma-qc settings --help
 tma-qc run --help
 ```
@@ -42,6 +44,77 @@ weights. B-spline/MI needs `registration-refine`. An unavailable method is
 reported as a missing prerequisite; there is no silent substitute. All current
 image-quality conclusions remain advisory review evidence.
 
+The [stage map](STAGES.md) connects each setting section to its inputs, operation,
+outputs and dependencies. The [annotated YAML](../configs/methods.example.yaml)
+shows all main parameter sections, including optional-backend presets. A key can
+be valid but inactive: for example, `registration.max_dimension` affects legacy
+`sift_affine`, while `registration.matching.max_dimension` affects `core`.
+
+## Choose for the data you actually have
+
+| Situation | Explicit choice | Requirement / consequence |
+| --- | --- | --- |
+| Native positions already exist | `geometry.backend: provided` | Position file must match selected FOV IDs and native coordinates. The engine loads positions; it does not estimate missing scan order. |
+| Positions need estimation and a reviewed regular grid exists | `geometry.backend: mist` | Requires ordered FOVs, reviewed grid/origin/numbering/overlap metadata, Java and an explicit MIST classpath. Existing positions still take precedence. |
+| No compatible frozen illumination model exists | `illumination.mode: none` | Records an uncorrected original-count baseline. This is the annotated YAML's deliberate choice, not the package default. |
+| Compatible frozen fields are assigned | `illumination.mode: cidre` | Requires manifest flatfield, darkfield and compatible model metadata. Applies the frozen correction without fitting a new model. |
+| No H&E pairs are declared | Keep registration settings as presets | No pair stages run. H&E whole-slide extraction is separate preparation. |
+| Reviewed pair transform exists | `registration.backend: provided` | Uses that transform. A supplied transform also takes precedence over a fitting selector. |
+| Fit an explicitly paired H&E core | `registration.backend: core`, `core_method: geometry_sift` | Uses reviewed pair identity and initialized shared structure; inspect fit, ambiguity and independent landmark evidence. Other initializers are listed above. |
+| Evaluate local refinement | Core `refinement.backend: bspline_mi` | Requires the optional extra and eligible global fit; displacement/Jacobian guards can reject refinement while retaining the global candidate. |
+
+None of these method choices establishes scientific acceptance. Change a method
+or scientific parameter in a separate run directory for a reviewable comparison.
+
+## Use YAML or TOML
+
+The engine accepts `.yaml`/`.yml` and `.toml` for `--config`, with the same section
+names, validation and precedence. YAML support is installed with the package.
+For a short uncorrected AF configuration with existing native positions:
+
+```yaml
+profile:
+  shape: [2048, 2048]
+  dtype: uint16
+geometry:
+  backend: provided
+illumination:
+  mode: none
+tile_qc:
+  window: 256
+  stride: 256
+  prefilter_sigma: 1.0
+mosaic:
+  alpha: 1.5
+  chunk_rows: 256
+  max_pixels: 500000000
+```
+
+Omitted values use package defaults. Inspect the complete effective configuration
+without opening images or creating a run:
+
+```bash
+tma-qc settings --config configs/methods.example.yaml --format yaml
+```
+
+Default output remains JSON; use `--format yaml` to print a portable YAML settings
+file. Inline core overrides remain sparse until pair registration resolves its
+core defaults. File format does not change method selection or save missing
+input assets. Use the same `--config` path with `plan` and `run`.
+
+This is the portable **engine settings** schema. The study-specific GX10 workflow
+wrapper uses a different schema with `schema_version`, `source`, `selection`,
+`paths`, `execution`, `settings` and `policy`. For the engine, parameter sections
+are at the YAML root; manifest/output/selection are supplied with `--manifest`,
+`--out` and repeated `--core` arguments. Do not pass a wrapper YAML directly to
+`tma-qc --config`. Numbered-layout preparation from that wrapper is not ported
+by accepting YAML here.
+
+The engine has no global overlap-ratio parameter. Native positions establish
+overlap for supplied geometry. MIST requires per-acquisition reviewed
+`horizontal_overlap` and `vertical_overlap` percentages and other grid metadata
+in the manifest, rather than an invented dataset-wide YAML prior.
+
 ## Choose from the terminal
 
 Inspect the effective configuration before starting a run:
@@ -53,7 +126,7 @@ tma-qc settings \
   --set tile_qc.stride=128
 ```
 
-This prints validated JSON without reading a manifest or images and without
+This prints validated JSON (or YAML with `--format yaml`) without reading a manifest or images and without
 creating output/cache directories. It works before imaging dependencies are
 installed. Inline core tables remain sparse; the fully resolved core configuration
 is recorded when registration runs. Use the same options with `run` or `plan`.
@@ -136,7 +209,7 @@ summary = run(
 The selector names are `geometry_method`, `illumination_method`,
 `registration_method`, `registration_transform` and `registration_refinement`.
 The last two apply to integrated core registration. Select a core method before
-using them. `parameters` is a nested dictionary with the same tables as TOML.
+using them. `parameters` is a nested dictionary with the same sections as YAML/TOML.
 `settings()` returns the validated main configuration without processing images;
 its inline core tables remain sparse. Fully resolved core settings are recorded
 when a registration stage runs.
@@ -146,16 +219,19 @@ prerequisites and planned storage without creating a run. Supply `output` for an
 operational readiness result. Its `ready_for_execution` describes prerequisites,
 while `run()` still verifies inputs when processing starts.
 
-Like TOML, generic parameter dictionaries may retain presets for another
+Like YAML/TOML, generic parameter dictionaries may retain presets for another
 backend. Only the active backend's parameters apply. A returned settings
 dictionary can be copied, edited and passed as `parameters` in another call.
 Explicit transform/refinement selectors require a core method on that call.
+Declared calibration assets can still be checked for input provenance when
+correction is disabled; inactive numerical presets do not waive asset integrity.
 
-## Keep everything in one TOML
+## Keep core parameters in the main settings file
 
 The existing `[geometry] backend`, `[illumination] mode`, and `[registration]
 backend/core_method` names remain supported. For core methods, nested tables in
-the main TOML now make the second research file optional even when tuning:
+the main YAML or TOML make the second research file optional even when tuning.
+For example, in TOML:
 
 ```toml
 [registration]
@@ -175,8 +251,9 @@ backend = "none"
 device = "auto"
 ```
 
-See [the annotated example](../configs/methods.example.toml). Merge sections into
-your acquisition's main file; do not repeat the same TOML table header.
+See the annotated [TOML](../configs/methods.example.toml) and
+[YAML](../configs/methods.example.yaml) examples. Merge sections into your
+acquisition's main file; do not repeat a YAML key or TOML table header.
 
 Existing `registration.core_config = "core-registration.toml"` files continue to
 work. Their `[matching]`, `[refinement]` and `[roma]` tables are read first; sparse
@@ -187,19 +264,19 @@ not control integrated exports. Use main `registration.export_aligned_he`.
 
 ## Precedence, paths and resume
 
-For a normal run: **built-in defaults → main TOML → `parameters` / `--set` →
+For a normal run: **built-in defaults → main YAML/TOML → `parameters` / `--set` →
 explicit method selectors**. Nested overrides preserve sibling settings.
 Selectors map to the existing configuration keys: a core registration method
 sets `registration.backend = "core"` and `registration.core_method`; transform
 and refinement selectors set their nested core fields.
 
 For `qc --run`, the saved main settings are inserted after defaults and before
-new TOML overrides. `run --resume` uses the arguments supplied on that invocation;
+new configuration-file overrides. `run --resume` uses the arguments supplied on that invocation;
 repeat the configuration and method options to reproduce the intended settings.
 Resume checks fingerprints and artifact hashes; changed relevant settings
 rebuild the affected stages. Do not alter fingerprints to force reuse.
 
-An external `core_config` set in the main TOML resolves beside that TOML. A new
+An external `core_config` set in the main YAML/TOML resolves beside that file. A new
 path supplied through Python `parameters` or `--set` resolves from the current
 working directory. Saved normalized paths retain their origin during QC replay.
 Manifest-relative source assets keep their existing manifest path rules.
@@ -259,8 +336,8 @@ Image dimensions and distances are pixels unless another unit is stated.
 
 ## Core matching parameter reference
 
-Use `[registration.matching]` in the main file or `[matching]` in the external
-core file. These settings apply to `backend = "core"`.
+Use `registration.matching` in the main YAML/TOML or `[matching]` in the external
+core TOML. These settings apply to `backend = "core"`.
 
 | Key | Default | Meaning / limits |
 | --- | --- | --- |
@@ -282,8 +359,8 @@ core file. These settings apply to `backend = "core"`.
 
 ## Core refinement and RoMa parameters
 
-Use `[registration.refinement]` / `[registration.roma]` in the main file or
-`[refinement]` / `[roma]` in the optional external file.
+Use `registration.refinement` / `registration.roma` in the main YAML/TOML or
+`[refinement]` / `[roma]` in the optional external TOML.
 
 | Table / key | Default | Meaning / limits |
 | --- | --- | --- |

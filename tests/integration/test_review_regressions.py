@@ -1,5 +1,6 @@
 import csv
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import numpy as np
@@ -122,7 +123,7 @@ def test_damaged_cache_metadata_is_recovered_without_stopping_other_cores(tmp_pa
     receipt = (output / geometry["outputs"]["positions"]["path"]).parent / "stage.json"
     databases = list((manifest.parent / "cache/state").rglob("state.sqlite3"))
     if damage.startswith("sqlite"):
-        with sqlite3.connect(databases[0]) as db:
+        with closing(sqlite3.connect(databases[0])) as db, db:
             if damage == "sqlite-json":
                 db.execute("UPDATE stages SET result='{' WHERE unit='demo-A1' AND stage='geometry'")
             else:
@@ -155,7 +156,7 @@ def test_damaged_cache_metadata_is_recovered_without_stopping_other_cores(tmp_pa
     assert mapping["demo-A1", "geometry"]["unit"] == "demo-A1"
     assert mapping["demo-A1", "geometry"]["cached"] is damage.startswith("sqlite")
     assert mapping["demo-B3", "mosaic"]["cached"]
-    with sqlite3.connect(databases[0]) as db:
+    with closing(sqlite3.connect(databases[0])) as db, db:
         records = db.execute(
             "SELECT result FROM stages WHERE unit='demo-A1' AND stage='geometry'"
         ).fetchall()

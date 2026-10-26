@@ -8,7 +8,7 @@ version = "0.4.1"
 readme = "README.md"
 description = "Traceable TMA preprocessing and stage-specific quality review"
 requires-python = ">=3.11"
-dependencies = ["numpy>=1.24", "scipy>=1.10", "tifffile>=2024.1", "Pillow>=10", "opencv-python>=4.8"]
+dependencies = ["numpy>=1.24", "scipy>=1.10", "tifffile>=2024.1", "Pillow>=10", "opencv-python>=4.8", "PyYAML>=6.0"]
 
 [project.optional-dependencies]
 codecs = ["imagecodecs>=2024.1"]

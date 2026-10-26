@@ -1,11 +1,19 @@
 """Small public Python entry points for the same workflow as the terminal CLI.
 
 Importing this module does not load image libraries. Folder and pair import
-prepare explicit manifests; settings inspects configuration; plan checks input
-readiness; run processes a prepared manifest and returns its review records.
+prepare explicit manifests; stages describes the processing contracts; settings
+inspects configuration; plan checks input readiness; run processes a prepared
+manifest and returns its review records.
 """
 
 from __future__ import annotations
+
+
+def stages():
+    """Describe stage inputs, outputs, settings and methods without opening data."""
+    from .stage_catalog import stage_registry
+
+    return stage_registry()
 
 
 def import_folder(raw_root, output, models=None, *, dataset_id="TMA-2026"):
@@ -44,8 +52,8 @@ def settings(
 ):
     """Return effective validated settings without opening data or creating a run.
 
-    ``config`` is an optional TOML path. Nested ``parameters`` dictionaries
-    override TOML values; explicit method selectors override both. The returned
+    ``config`` is an optional TOML or YAML path. Nested ``parameters`` dictionaries
+    override file values; explicit method selectors override both. The returned
     dictionary is independent of the caller's input dictionaries. This function
     and importing this module require no image libraries.
     """
@@ -118,7 +126,7 @@ def run(
 ):
     """Process a prepared JSON manifest and return execution and review records.
 
-    ``output`` is the run directory; ``config`` is an optional TOML path.
+    ``output`` is the run directory; ``config`` is an optional TOML or YAML path.
     ``selected`` limits processing to manifest core UIDs and their explicit H&E
     pairs. Omit it to process all cores. Overrides follow :func:`settings`.
 

@@ -1,3 +1,26 @@
+# Unreleased — stage choices and YAML settings, 2026-10-26
+
+The main engine configuration now accepts strict `.yaml`/`.yml` files alongside
+TOML, with the same defaults, typed overrides and method selectors. YAML rejects
+duplicate/non-string keys, anchors, aliases, explicit tags and nonfinite or
+non-JSON values. PyYAML is installed with the package and imported only when
+reading or rendering YAML. Existing TOML and JSON settings output remain valid.
+External `registration.core_config` research files remain TOML.
+
+`tma-qc stages` and Python `api.stages()` explain the nine AF and three explicit
+H&E pair stages: dependencies, input/output contracts, primary parameters and
+fixed versus selectable methods. `settings --format yaml` prints reusable
+effective engine settings. An annotated YAML and a stage guide connect units,
+defaults, method prerequisites and backend-specific presets to each operation.
+The study-specific GX10 preparation wrapper retains its separate schema.
+
+Stage contracts are checked against executable workflow declarations and actual
+stage receipts. YAML/TOML tests compare settings, native synthetic AF/H&E outputs,
+source preservation and verified resume. Existing SQLite test fixtures now
+explicitly close their transaction connections, resolving strict Python 3.14
+resource warnings without changing production code. Scientific algorithms,
+stage order and parameter defaults are unchanged; no release is published.
+
 # Unreleased — usability polish, 2026-10-24
 
 Adds `tma-qc settings` to inspect validated effective JSON configuration with the

@@ -1,3 +1,40 @@
+# Unreleased YAML and stage-choice interface — 2026-10-26
+
+Portable YAML settings and the inspectable stage catalog were checked in a
+separate checkout. The production study snapshot and its settings were preserved.
+
+- Full Python 3.14.6 suite with `-W error --strict-config --strict-markers`:
+  **733 passed, six skipped**. The skips require optional RoMa/SimpleITK
+  dependencies. Ruff 0.13.2 lint and formatting pass for **135 Python files**.
+- YAML/YML and TOML resolve identical settings and override precedence. Strict
+  YAML controls reject duplicate/non-string keys, aliases, anchors, explicit
+  tags, nonfinite values and invalid types. Relative external core-TOML paths
+  retain their file origin. Resolved YAML round-trips through the same validator.
+- CLI/API settings, stages and method inspection work with image imports
+  forbidden and leave processing/cache directories absent. Stage descriptions
+  agree with executable workflow dependencies/parameter sections and actual
+  synthetic execution receipts.
+- A fresh synthetic AF/H&E comparison completes all **12 stages** through
+  TOML/API and YAML/CLI with identical decoded native TIFF pixels, preserved
+  inputs and verified YAML resume. All **30 stage/backend/QC module files** are
+  byte-identical to the preceding usability branch; algorithms, scientific
+  defaults and stage order are unchanged.
+- Built source and wheel distributions. All **69 installed package Python
+  modules** match the tested source. Outside the checkout, the installed wheel
+  inspects stages/settings, performs readiness without creating a run and
+  completes all **12 stages**. Its **39 artifact hashes** verify and **19 input
+  and configuration files** remain unchanged. Dependencies were reused read-only
+  from existing environments; the package and development tool installation
+  stayed in an isolated validation environment.
+- Strict Python 3.14 warnings exposed six unclosed SQLite connections in older
+  test transaction fixtures. Explicit fixture cleanup preserves transaction
+  semantics; no production SQL or processing change was required.
+
+These are software-equivalence and interface checks. They do not establish real
+image-quality acceptance or port the study-specific numbered-layout preparation
+wrapper into the portable engine. Existing method prerequisites and scientific
+review requirements remain applicable.
+
 # Unreleased usability polish — 2026-10-24
 
 Configuration inspection, Python readiness and clearer command/report navigation

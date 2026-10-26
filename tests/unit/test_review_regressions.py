@@ -1,6 +1,7 @@
 """Regression controls for defects reproduced in the 2026-10-18 review."""
 
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import numpy as np
@@ -19,7 +20,7 @@ from tma_qc.report import load_settings
 
 def inventory(tmp_path, files, directories=()):
     path = tmp_path / "copy.sqlite3"
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         db.execute("CREATE TABLE meta (key TEXT PRIMARY KEY,value TEXT)")
         db.execute(
             "CREATE TABLE entries (path TEXT,kind TEXT,copied INTEGER,copy_error TEXT,inventory_error TEXT,source_sha256 TEXT,destination_verified INTEGER)"

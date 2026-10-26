@@ -82,12 +82,45 @@ def list_methods(args: Namespace) -> int:
     return 0
 
 
+def list_stages(args: Namespace) -> int:
+    """Explain the existing stage graph without loading image or optional runtimes."""
+    from .api import stages
+
+    registry = stages()
+    if args.json_output:
+        print(json.dumps(registry, indent=2, allow_nan=False))
+        return 0
+    for key, title in (("af_stages", "AF stages"), ("pair_stages", "Explicit H&E pair stages")):
+        print(title + " (execution order)")
+        for stage in registry[key]:
+            print(f"\n  {stage['name']}: {stage['description']}")
+            print("    Depends on: " + (", ".join(stage["dependencies"]) or "declared inputs"))
+            print("    Inputs: " + "; ".join(stage["inputs"]))
+            print("    Settings sections: " + ", ".join(stage["config_sections"]))
+            for selector, methods in stage["methods"].items():
+                print(f"    --{selector.replace('_', '-')}: " + ", ".join(methods["choices"]))
+            if stage["fixed_algorithm"]:
+                print("    Fixed algorithm: " + stage["fixed_algorithm"]["description"])
+            print("    Outputs: " + "; ".join(stage["outputs"]))
+        print()
+    print("Shared settings: " + ", ".join(registry["shared_config_sections"]))
+    for note in registry["notes"]:
+        print(note)
+    print("Use methods for requirements and settings --format yaml for complete values.")
+    return 0
+
+
 def show_settings(args: Namespace) -> int:
     """Print the validated effective configuration without touching image inputs."""
     from .api import settings
 
     config = settings(args.config, **_settings_options(args))
-    print(json.dumps(config, indent=2, allow_nan=False))
+    if args.format == "yaml":
+        from .configuration_io import render_yaml_settings
+
+        print(render_yaml_settings(config), end="")
+    else:
+        print(json.dumps(config, indent=2, allow_nan=False))
     return 0
 
 
