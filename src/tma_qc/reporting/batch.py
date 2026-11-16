@@ -6,7 +6,7 @@ from pathlib import Path
 
 from ..provenance import fingerprint, write_json
 from ..qc.assessment import artifact_assessments, input_assessment, quality_status
-from ..schema import CORE_STAGES, PAIR_STAGES
+from ..schema import PAIR_STAGES, core_stages
 from .core import build_core, document, escape, href
 from .slide import make_grid
 
@@ -78,7 +78,7 @@ def build_report(root, manifest, summary, config, cohort=None):
             else "complete"
         )
         if execution == "complete" and (
-            not set(CORE_STAGES) <= {r["stage"] for r in rows}
+            not set(core_stages(config)) <= {r["stage"] for r in rows}
             or any(not set(PAIR_STAGES) <= {r["stage"] for r in records} for _, records in pairs)
         ):
             execution = "partial"

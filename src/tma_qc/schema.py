@@ -19,6 +19,22 @@ CORE_STAGES = (
     "tissue",
 )
 PAIR_STAGES = ("he_qc", "registration", "registration_qc")
+BASICPY_CORE_STAGES = (
+    "index",
+    "tile_qc",
+    "illumination_fit",
+    "illumination",
+    "geometry",
+    "geometry_qc",
+    "illumination_qc",
+    "mosaic",
+    "mosaic_qc",
+    "tissue",
+)
+
+
+def core_stages(config):
+    return BASICPY_CORE_STAGES if config["illumination"]["mode"] == "basicpy" else CORE_STAGES
 
 
 class Execution(StrEnum):
@@ -72,6 +88,7 @@ class Core:
     role: str = "raw_camera"
     metadata: dict = field(default_factory=dict)
     blocked_reasons: list[str] = field(default_factory=list)
+    illumination_holdout_fov_ids: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         for v in [self.uid, self.acquisition, self.slide, self.core, self.channel, self.group]:
@@ -90,6 +107,14 @@ class Core:
             raise ValueError(f"{self.uid}: one source path assigned to multiple FOV ids")
         if type(self.geometry_reviewed) is not bool:
             raise ValueError("geometry_reviewed must be a boolean")
+        held = self.illumination_holdout_fov_ids
+        if (
+            not isinstance(held, list)
+            or any(not isinstance(v, str) for v in held)
+            or len(set(held)) != len(held)
+            or not set(held) <= {f.id for f in self.fovs}
+        ):
+            raise ValueError("illumination_holdout_fov_ids must be unique manifest FOV ids")
 
 
 @dataclass

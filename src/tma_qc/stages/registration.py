@@ -22,7 +22,7 @@ from ..io.images import (
     structural_gray,
     window,
 )
-from ..provenance import write_json
+from ..provenance import read_json, write_json
 from ..qc.registration import (
     evaluate_landmarks,
     load_registration_transform,
@@ -271,6 +271,16 @@ def _register(ctx, out, af, he, coverage):
 def evaluate(ctx, out):
     transform, record = load_registration_transform(ctx.asset("registration", "transform"))
     path = ctx.manifest.resolve(ctx.pair.landmarks) if ctx.pair.landmarks else None
+    geometry_fingerprint = ctx.af_results["geometry"].fingerprint
+    declared = ctx.pair.metadata.get("landmarks_geometry_fingerprint")
+    if declared is None and path and path.suffix.lower() == ".json":
+        declared = read_json(path).get("geometry_fingerprint")
+    estimated = ctx.af_results["geometry"].metrics.get("source", "").startswith("MIST")
+    if path and (declared is not None or estimated):
+        if declared != geometry_fingerprint:
+            raise NeedsInput(
+                "Landmarks require a matching landmarks_geometry_fingerprint for the current AF geometry"
+            )
     settings = ctx.config["qc"]
     report = evaluate_landmarks(
         transform,
@@ -280,6 +290,8 @@ def evaluate(ctx, out):
         af_shape=record.get("af_native_shape_yx"),
         he_shape=record.get("he_native_shape_yx"),
     )
+    if estimated or declared is not None:
+        report["geometry_fingerprint"] = geometry_fingerprint
     measured = out / "landmark-errors.json"
     write_json(measured, report)
     unknown_path = out / "correspondence-unknown.tif"

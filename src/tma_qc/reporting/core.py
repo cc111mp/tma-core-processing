@@ -108,6 +108,15 @@ def illumination_summary(rows):
     fraction = metrics.get("assessed_pair_fraction")
     fraction_text = f" ({fraction:.1%})" if fraction is not None else ""
     body = "<h2>Illumination review</h2>"
+    if "photometric_independence" in metrics:
+        body += (
+            '<p class="notice">Core-dependent field: in-sample mismatch is a fit residual. '
+            "Only pairs labelled held_out are independent of illumination fitting. "
+            "MIST geometry remains in-sample; these records do not confirm the field.</p>"
+        )
+        body += f"<p>Fit membership counts: {escape(str(metrics.get('fit_membership_counts', {})))}.</p>"
+        if metrics.get("field_identifiability") == "limited":
+            body += '<p class="notice">Field identifiability: limited. Small fit stack; inspect gain and possible tissue absorption.</p>'
     body += (
         f"<p>Overlap pairs assessed: <strong>{assessed} / {candidates}</strong>{fraction_text}. "
         "Excluded overlap pairs are unknown. This is overlap-pair assessment coverage, "

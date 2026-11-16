@@ -18,4 +18,7 @@ def run(ctx, out):
             "metadata": ctx.core.metadata,
         },
     )
-    return Payload({"inputs": path}, ctx.verified, [], Quality.PASS)
+    metrics = dict(ctx.verified)
+    if ctx.config["illumination"]["mode"] == "basicpy":
+        metrics.update(ctx.timings)
+    return Payload({"inputs": path}, metrics, [], Quality.PASS)

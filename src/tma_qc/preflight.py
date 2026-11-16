@@ -125,7 +125,21 @@ def check(manifest, config, output=None, selected=None):
         )
         if verified:
             checked_sources += verified[0]["verified_files"]
-        if core.positions:
+        if config["illumination"]["mode"] == "basicpy":
+            from .stages.illumination_fit import membership
+
+            attempt(
+                core.uid,
+                "illumination membership",
+                lambda: membership(core, config["illumination"]),
+            )
+            warnings.append(
+                {
+                    "scope": core.uid,
+                    "reason": "BaSiCPy requires a qualified interpreter; run verifies its runtime before fitting. In-sample residuals do not confirm the field.",
+                }
+            )
+        if core.positions and config["geometry"]["input"] != "corrected":
             attempt(
                 core.uid,
                 "native geometry",
@@ -138,7 +152,10 @@ def check(manifest, config, output=None, selected=None):
         elif config["geometry"]["backend"] == "mist":
 
             def mist_runtime():
+                from .backends.mist import classpath_files
+
                 validate_layout(core, config["geometry"], config["profile"]["shape"])
+                classpath_files(config["geometry"])
                 if not shutil.which("java"):
                     raise NeedsInput("Java is unavailable on PATH")
                 for part in config["geometry"]["mist_classpath"].split(os.pathsep):

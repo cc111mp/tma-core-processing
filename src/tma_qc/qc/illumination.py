@@ -67,7 +67,9 @@ def _signal_diagnostics(raw, corrected, reader, max_sample=256):
     }
 
 
-def evaluate_correction(raw, corrected, positions, *, reader=None, raw_measurements=None):
+def evaluate_correction(
+    raw, corrected, positions, *, reader=None, raw_measurements=None, membership=None
+):
     reader = reader or read_image
     masks, selection = raw_support_masks(raw, positions, reader=reader)
     before = evaluate_overlaps(
@@ -116,6 +118,16 @@ def evaluate_correction(raw, corrected, positions, *, reader=None, raw_measureme
                     and a["support_relative_mean_difference"] is not None
                     else None,
                 }
+            )
+    if membership is not None:
+        for pair in compared:
+            a, b = membership[pair["a"]], membership[pair["b"]]
+            pair["fit_membership"] = (
+                "in_sample"
+                if a == b == "in_fit"
+                else "held_out"
+                if a == b == "held_out"
+                else "partial"
             )
     worst = max(
         compared, key=lambda row: row["corrected_absolute_difference_p95_counts"], default=None

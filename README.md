@@ -2,7 +2,7 @@
 
 A research workflow for reconstructing TMA autofluorescence (AF) cores from raw
 FOVs, applying frozen illumination correction, reviewing stage-specific QC, and
-registering explicitly paired H&E sections. Version **0.4.1**.
+registering explicitly paired H&E sections. Version **0.5.0**.
 
 New users: start with [Getting started (PDF)](docs/tutorial/TMA_QC_User_Guide.pdf),
 beginning with the default NAS-style folder structure. The
@@ -89,10 +89,27 @@ on that invocation.
 
 Advanced core matching and refinement can live in the main TOML under
 `[registration.matching]`, `[registration.refinement]` and `[registration.roma]`.
-Existing external core TOMLs remain supported. Supplied geometry and pair
-transforms retain precedence over estimation/fitting. See the complete
+Existing external core TOMLs remain supported. Supplied geometry retains precedence in the legacy modes; the opt-in corrected-image
+MIST profile estimates fresh positions. Supplied pair transforms retain precedence over fitting. See the complete
 [methods and settings reference](docs/SETTINGS.md) for defaults, units,
 requirements, CLI/Python examples and the [annotated TOML](configs/methods.example.toml).
+
+## Fit illumination from each core (opt-in)
+
+Use [basicpy_mist_core_v1.toml](configs/basicpy_mist_core_v1.toml) for core-scoped
+BaSiCPy followed by native corrected-image MIST. Set the qualified fitter's Python
+and MIST classpath, and supply a reviewed grid in each core's manifest metadata:
+
+```bash
+tma-qc run --manifest /data/manifest.json --config configs/basicpy_mist_core_v1.toml --out /results/basicpy-core --resume
+```
+
+The fitter requires BaSiCPy 2.0.0 / NumPy 1.26.4; an external resident worker keeps
+that environment separate from the runner. CUDA is requested explicitly; select
+`illumination.device = "cpu"` for CPU. The frozen CIDRE path remains the default.
+In-sample overlap mismatch is a fit residual; small stacks and worst overlaps need
+review. See [settings](docs/SETTINGS.md#core-scoped-basicpy-profile) and
+[QC interpretation](docs/STAGE_QC.md#sample-dependent-illumination-and-geometry).
 
 ## Register paired H&E cores
 

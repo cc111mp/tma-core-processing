@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import os
 import stat
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -42,15 +43,26 @@ def verify_file(path, expected=None, *, identities=None):
     return actual
 
 
-def verify_core(core, manifest, profile, *, decode=True, reader=None, identities=None, paths=None):
+def verify_core(
+    core,
+    manifest,
+    profile,
+    *,
+    decode=True,
+    reader=None,
+    identities=None,
+    paths=None,
+    stack=None,
+    read_threads=1,
+):
     identities = identities if identities is not None else {}
     if not core.fovs:
         raise ValueError(f"{core.uid}: no raw FOVs to verify")
-    sources = {}
-    shape = None
-    for fov in core.fovs:
+
+    def inspect(item):
+        i, fov = item
         path = paths[fov.id] if paths is not None else manifest.raw_path(fov)
-        sources[str(path)] = verify_file(path, fov.sha256, identities=identities)
+        digest = verify_file(path, fov.sha256, identities=identities)
         with tifffile.TiffFile(path, _multifile=False) as tif:
             series = validate_tiff_plane(tif, label=f"FOV {fov.id}")
             dtype = np.dtype(series.dtype).newbyteorder("=")
@@ -67,6 +79,17 @@ def verify_core(core, manifest, profile, *, decode=True, reader=None, identities
             a = (reader or read_image)(path)
             if a.dtype != np.dtype(profile["dtype"]) or list(a.shape) != profile["shape"]:
                 raise ValueError(f"FOV {fov.id}: expected {profile}, found {a.shape}/{a.dtype}")
+            if stack is not None:
+                stack[i] = a
+        return str(path), digest, shape
+
+    if read_threads == 1:
+        verified = list(map(inspect, enumerate(core.fovs)))
+    else:
+        with ThreadPoolExecutor(max_workers=read_threads) as pool:
+            verified = list(pool.map(inspect, enumerate(core.fovs)))
+    sources = {path: digest for path, digest, _ in verified}
+    shape = verified[-1][2]
     for path, identity in identities.items():
         file_identity(path, identity)
     return {

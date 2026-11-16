@@ -107,12 +107,15 @@ def estimate_core(core, config, pixels):
     tile_pixels = h * w
     n = len(core.fovs)
     correction = (
-        (n * tile_pixels * 4 + tile_pixels * 8) if config["illumination"]["mode"] == "cidre" else 0
+        (n * tile_pixels * 4 + tile_pixels * 8)
+        if config["illumination"]["mode"] in {"cidre", "basicpy"}
+        else 0
     )
     mist = 0
-    if not core.positions and config["geometry"]["backend"] == "mist":
+    corrected = config["geometry"].get("input", "raw") == "corrected"
+    if (not core.positions or corrected) and config["geometry"]["backend"] == "mist":
         factor = config["geometry"]["downsample"]
-        mist = n * (h // factor) * (w // factor) * 2
+        mist = n * (h // factor) * (w // factor) * (4 if corrected else 2)
     # Two float32 mosaics + two uint8 coverage maps + two uint8 support maps.
     images = pixels * 12
     previews = 16 * config["report"]["preview_size"] ** 2 + 16 * 1024 * 1024
@@ -120,7 +123,7 @@ def estimate_core(core, config, pixels):
         "uid": core.uid,
         "canvas_pixels": pixels,
         "retained_bytes_estimate": correction + mist + images + previews + (n + 12) * 4096,
-        "peak_blend_scratch_bytes": 0,
+        "peak_blend_scratch_bytes": n * tile_pixels * 2 if corrected else 0,
     }
 
 
@@ -130,7 +133,7 @@ def estimate_batch(manifest, config, output, selected=None):
         if selected and core.uid not in selected or core.blocked_reasons:
             continue
         try:
-            if core.positions:
+            if core.positions and config["geometry"].get("input", "raw") != "corrected":
                 positions = load_positions(core.positions, [f.id for f in core.fovs])
                 h, w = canvas_shape(positions, config["profile"]["shape"])
                 estimated_geometry = False

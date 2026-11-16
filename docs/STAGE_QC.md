@@ -3,7 +3,7 @@
 Design updated: 22 October 2026 (Hong Kong). Current native research registration
 is integrated; additional acceptance policies remain explicitly proposed.
 
-QC accompanies reconstruction and produces an independent review record. A
+QC accompanies reconstruction and produces a separate review record. A
 completed diagnostic with a quality failure does not discard the reconstructed
 core. A diagnostic crash records execution `error` and quality `not_assessed`;
 it is not evidence of a tissue defect. Missing or corrupt essential inputs,
@@ -331,3 +331,28 @@ Calibrate decisions with expert-marked seams and regions, including disagreement
 cases, and evaluate on held-out slides before automated acceptance. Acquisition
 compatibility, geometric accuracy and biological intensity preservation remain
 separate validation questions.
+
+## Sample-dependent illumination and geometry
+
+For `basicpy_mist_core_v1`, every assessed illumination pair has `fit_membership`:
+`in_sample` (both fitted), `held_out` (both excluded), or `partial` (one excluded).
+Pairs remain reported even when fitted. With `holdout = "none"`, the summary is
+`photometric_independence: in_sample`: mismatch is the fit residual, including
+the worst corrected-p95 pair. Only `held_out` may be described as independent
+of illumination fitting. No record confirms biological intensity preservation.
+
+`stack_size`, fit tile count, full fitter settings, gain percentiles and exact
+signal-collapse flags accompany QC. A fit smaller than `min_tiles_warning`
+(default 16) records `field_identifiability: limited`; size alone never blocks.
+A large gain may reflect tissue absorbed into the estimated field.
+
+Geometry records `estimation_inputs: corrected_float32` and
+`geometry_independence: in_sample`, including for illumination-held-out FOVs,
+since every tile enters MIST. Phase residuals describe remaining error on the
+registered images. Worst overlaps / largest phase residuals, per-seam p95 and
+maximum, worst seams and tile-pitch harmonic fractions remain visible.
+Raw-defined support and raw tile/tissue measurements remain the comparison basis.
+
+Landmark evaluation is bound to one AF geometry fingerprint. Reusing a CSV with
+new MIST geometry requires its declared fingerprint to match. Quality stages
+continue to return REVIEW; input integrity can still PASS.

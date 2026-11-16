@@ -34,6 +34,8 @@ class TileCache:
         self.identities = identities if identities is not None else {}
         self.max_bytes = max_bytes
         self.entries = OrderedDict()
+        self.stack = {}
+        self.stack_bytes = 0
         self.bytes = self.peak_bytes = self.hits = self.misses = self.evictions = 0
 
     def read(self, path):
@@ -43,6 +45,9 @@ class TileCache:
         if path not in self.paths:
             return read_image(path)
         identity = file_identity(path, self.identities.get(path))
+        if path in self.stack:
+            self.hits += 1
+            return self.stack[path]
         entry = self.entries.pop(path, None)
         if entry is not None:
             previous, image = entry
@@ -68,10 +73,17 @@ class TileCache:
 
     def clear(self):
         self.entries.clear()
+        self.stack.clear()
         self.bytes = 0
 
+    def use_stack(self, stack, paths):
+        """A profile-owned mapped stack replaces repeated decoding and LRU retention."""
+        self.clear()
+        self.stack = {Path(os.path.abspath(path)): stack[i] for i, path in enumerate(paths)}
+        self.stack_bytes = stack.nbytes
+
     def statistics(self):
-        return {
+        result = {
             "budget_bytes": self.max_bytes,
             "retained_bytes": self.bytes,
             "peak_retained_bytes": self.peak_bytes,
@@ -79,3 +91,6 @@ class TileCache:
             "misses": self.misses,
             "evictions": self.evictions,
         }
+        if self.stack_bytes:
+            result["mapped_stack_bytes"] = self.stack_bytes
+        return result

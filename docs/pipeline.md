@@ -1,4 +1,4 @@
-# Pipeline reference, version 0.4.1
+# Pipeline reference, version 0.5.0
 
 Start with the [research guide](RESEARCH_GUIDE.md) for the run/review sequence.
 [METHODS.md](METHODS.md) explains the calculations and scientific limits;
@@ -442,3 +442,60 @@ pipeline. Active transfer/CIDRE controller scripts under `work/` are not modifie
 The legacy log checker now rejects nonfinite, singular and malformed similarity
 matrices. Missing Dice/residual values, or invalid/out-of-range supplied numeric
 evaluation values, cannot result in OK.
+
+## Core-scoped BaSiCPy profile
+
+`configs/basicpy_mist_core_v1.toml` selects `basicpy_mist_core_v1`. Read
+`workflows.py` for its explicit order:
+
+```text
+index → tile_qc → illumination_fit → illumination → geometry
+      → geometry_qc → illumination_qc → mosaic → mosaic_qc → tissue
+```
+
+The legacy `cidre` / `none` nine-stage order remains above. The fit sees only the
+current core's manifest FOVs, excluding its declared holdouts. No group fields,
+other core pixels or landmarks enter this fit. Correction precedes MIST; there
+is no overlapping raw-MIST job. Cores run serially.
+
+`index` verifies and decodes the core once into a native uint16 local mapped
+stack. The same pixels feed fitting, apply and raw QC; the stack is released
+before the next core. `runtime.read_threads` (default 8) is the profile's shared
+reader / MIST thread budget; configured MIST threads must not exceed it or 8.
+A lazy qualified worker owns one CUDA context for the entire run. Its Python
+must provide BaSiCPy 2.0.0 / NumPy 1.26.4, checked before import. Set
+`illumination.basicpy_python` when the runner does not provide that pair.
+No package installation or environment change occurs during a run.
+
+`illumination_fit` publishes native float32 `flatfield.tif`, `darkfield.tif`,
+`fit.json` and `membership.json`. The receipt records the exact settings,
+runtime/device, source ids and SHA256s, fit / stack counts, upstream convergence
+flag and scores, field extrema, nonpositive fraction, elapsed fit time and
+`sample_scope: core`. Worker NPY exchange is transient local storage.
+
+`illumination` uses the existing `(I-D)/S` apply code. Failed convergence or a
+nonpositive field blocks correction. Corrected tiles remain signed, unclipped
+float32. Quality controls remain `not_passed`; absolute intensity preservation
+remains unvalidated.
+
+`geometry` stages corrected tiles in manifest order as uncompressed float32
+classic TIFFs for ImageJ. It always estimates positions in this profile, even
+if baseline supplied positions remain in the manifest. A reviewed grid includes
+rows, columns, numbering pattern, origin, overlap percentages and uncertainty.
+Missing grid/jars raises `NeedsInput` within the stage. A zero Java exit without
+complete `img-global-positions-1.txt` is an error. Parsed positions retain native
+integer XY / upper-left coordinates and `source: MIST_corrected_sample`.
+Its receipt depends on fit and corrected-output hashes, grid, threads and jar
+hashes, preventing reuse with a different field. Raw MIST retains its original
+block-mean downsample-4 / two-thread command.
+
+Photometric overlap boxes are recomputed from these positions. Geometry QC
+measures corrected-image phase residuals on raw-defined support; illumination
+eligibility still uses raw correlation and support. Raw/corrected mosaics share
+one position document and the unchanged alpha-1.5 blend. Tissue uses `mosaic/raw`.
+
+For landmark evaluation, supply `pair.metadata.landmarks_geometry_fingerprint`
+(or `geometry_fingerprint` in a JSON landmark document) equal to the AF geometry
+stage fingerprint. Corrected MIST rejects unbound or mismatched landmarks.
+`registration_qc` records the scored fingerprint in its provenance; candidate
+landmark payloads also record it. Landmarks never enter fitting or MIST.

@@ -200,11 +200,11 @@ Image dimensions and distances are pixels unless another unit is stated.
 | `tile_qc.window` | `256` | Detail-measurement window side, at least 8 |
 | `tile_qc.stride` | `256` | Window sampling step, positive integer |
 | `tile_qc.prefilter_sigma` | `1.0` | Gaussian scale before detail measurement, positive |
-| `geometry.backend` | `"provided"` | `provided` or `mist`; existing native positions take precedence |
+| `geometry.backend` | `"provided"` | `provided` or `mist`; native positions take precedence in legacy modes |
 | `geometry.downsample` | `4` | MIST input reduction factor, positive integer |
 | `geometry.mist_classpath` | `""` | Explicit Java classpath for MIST |
 | `geometry.timeout_seconds` | `1800` | External MIST timeout in seconds |
-| `illumination.mode` | `"cidre"` | `cidre` or `none`; does not refit fields |
+| `illumination.mode` | `"cidre"` | `cidre`, `none`, or opt-in core-scoped `basicpy` |
 | `mosaic.alpha` | `1.5` | Positive exponent on native linear blend weights |
 | `mosaic.chunk_rows` | `256` | Positive row-band size for bounded blending |
 | `mosaic.max_pixels` | `500000000` | Positive native canvas allocation guard |
@@ -272,3 +272,38 @@ The optional external file also accepts `seed = 20261019` (integer 0..2³¹−1)
 `threads = 2` (integer 1–32), and `export_chunk = 512` (integer 64–2048).
 Thread counts and model runtimes participate in provenance. None of these
 defaults are a claim of optimal settings for a biological study.
+
+## Core-scoped BaSiCPy profile
+
+Start with [the complete profile](../configs/basicpy_mist_core_v1.toml). Select it
+with `--config` in both `run` and `plan`; Python uses the same `config=` path.
+The stable profile name is `basicpy_mist_core_v1`; CIDRE remains the default.
+
+| Setting | Profile value | Meaning |
+| --- | --- | --- |
+| `illumination.mode` | `"basicpy"` | Fit only the current core's raw FOVs |
+| `illumination.device` | `"cuda"` | Explicit `"cpu"` fallback; no silent fallback |
+| `illumination.basicpy_python` | `""` | Runner interpreter if qualified; otherwise set qualified Python executable |
+| `illumination.min_tiles_warning` | `16` | Record limited identifiability below this fitted count; never reject on count alone |
+| `illumination.holdout` | `"none"` | `"declared"` excludes `core.illumination_holdout_fov_ids` from fitting |
+| `illumination.basicpy.*` | See complete TOML | Every qualified 16 November 2026 fitting setting, recorded in fit and QC |
+| `geometry.backend` | `"mist"` | Required for BaSiCPy in this release |
+| `geometry.input` | `"corrected"` | Required with BaSiCPy; unavailable under CIDRE/none |
+| `geometry.downsample` | `1` | Native corrected-image registration |
+| `geometry.threads` | `8` | Candidate MIST threads, at most shared budget / 8 |
+| `runtime.read_threads` | `8` | Shared reader / MIST budget; these phases run sequentially |
+
+For declared holdout, add `"illumination_holdout_fov_ids": ["1", "2"]` to that
+core's manifest entry. Ids must be unique and belong to the core; at least one
+FOV must remain in the fit. Holdouts are still corrected, registered and blended.
+Use raw-selected overlap pairs whose two tiles were excluded for independent
+photometric evidence. No held-out geometry claim follows.
+
+The grid under `core.metadata.grid` requires `rows`, `columns`,
+`numbering_pattern`, `origin`, `horizontal_overlap`, `vertical_overlap` and
+`overlap_uncertainty`. Set `core.metadata.grid_reviewed = true`, retain the
+reviewed acquisition sequence, and configure `geometry.mist_classpath` explicitly.
+Supplied position files are retained for baseline comparisons but corrected MIST
+always estimates fresh positions. Bind evaluation landmarks using
+`pair.metadata.landmarks_geometry_fingerprint` equal to the geometry stage
+fingerprint. The optional JSON landmark format may carry `geometry_fingerprint`.

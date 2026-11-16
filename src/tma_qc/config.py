@@ -5,6 +5,7 @@ import tomllib
 from copy import deepcopy
 from pathlib import Path
 
+from .illumination_config import ILLUMINATION_DEFAULTS, validate_profile
 from .registration_config import inline_schema, is_finite_number, validate_inline_settings
 from .storage import DEFAULT_STORAGE
 
@@ -15,6 +16,7 @@ DEFAULTS = {
         "threads": 2,
         "decoded_cache_bytes": 512 * 1024 * 1024,
         "tile_workers": 4,
+        "read_threads": 8,
     },
     "storage": DEFAULT_STORAGE,
     "tile_qc": {"window": 256, "stride": 256, "prefilter_sigma": 1.0},
@@ -23,8 +25,10 @@ DEFAULTS = {
         "downsample": 4,
         "mist_classpath": "",
         "timeout_seconds": 1800,
+        "input": "raw",
+        "threads": 2,
     },
-    "illumination": {"mode": "cidre"},
+    "illumination": ILLUMINATION_DEFAULTS,
     "mosaic": {"alpha": 1.5, "chunk_rows": 256, "max_pixels": 500000000},
     "tissue": {"quantile": 0.2, "mad_multiplier": 6.0},
     "registration": {
@@ -143,8 +147,7 @@ def load_config(
             raise ValueError(f"{section}.{key} must be a positive integer")
     if config["runtime"]["threads"] > 2**31 - 1:
         raise ValueError("runtime.threads exceeds the signed 32-bit OpenCV limit")
-    if config["illumination"]["mode"] not in {"cidre", "none"}:
-        raise ValueError("illumination.mode must be cidre or none")
+    validate_profile(config)
     if (
         type(config["runtime"]["decoded_cache_bytes"]) is not int
         or config["runtime"]["decoded_cache_bytes"] < 0
