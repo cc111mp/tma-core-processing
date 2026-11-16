@@ -175,7 +175,7 @@ def test_bad_field_or_convergence_blocks_apply_and_mosaic(candidate, invalid):
     _, stages = execute(candidate)
     assert stages["illumination"]["execution"] in {"blocked", "error"}
     assert stages["mosaic"]["execution"] == "blocked"
-    assert not list(candidate[2].rglob("raw.tif"))
+    assert not list(candidate[2].rglob("raw-mosaic.tif"))
 
 
 @pytest.mark.parametrize("holdout", [False, True])
