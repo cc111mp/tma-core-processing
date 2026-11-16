@@ -7,7 +7,7 @@ import re
 import tomllib
 from copy import deepcopy
 
-from .schema import CORE_STAGES, PAIR_STAGES
+from .schema import BASICPY_CORE_STAGES, CORE_STAGES, PAIR_STAGES
 
 METHODS = {
     "geometry_method": {
@@ -34,6 +34,13 @@ METHODS = {
             "cidre": {
                 "description": "Apply frozen flatfield and darkfield correction",
                 "requirements": ["Compatible frozen model fields and receipt"],
+            },
+            "basicpy": {
+                "description": "Fit one core's raw FOVs, then register corrected float32 tiles",
+                "requirements": [
+                    "BaSiCPy 2.0.0 / NumPy 1.26.4 interpreter",
+                    "Corrected native MIST, reviewed grid and jars",
+                ],
             },
             "none": {
                 "description": "Retain original counts without illumination correction",
@@ -131,11 +138,17 @@ def method_registry():
         "fixed_af_stages": list(CORE_STAGES),
         "fixed_pair_stages": list(PAIR_STAGES),
         "fixed_algorithms": deepcopy(FIXED_ALGORITHMS),
+        "processing_profiles": {
+            "basicpy_mist_core_v1": {
+                "config": "configs/basicpy_mist_core_v1.toml",
+                "af_stages": list(BASICPY_CORE_STAGES),
+            },
+        },
         "core_default_method": "geometry_sift",
         "precedence": ["defaults", "saved base", "TOML", "parameters / --set", "method selectors"],
         "notes": [
             "Registration runs only for explicitly assigned section pairs.",
-            "A core's supplied native positions take precedence over geometry estimation.",
+            "Supplied positions take precedence in legacy modes; corrected-image MIST always estimates fresh positions.",
             "The default registration route is provided; the default core initializer is geometry_sift.",
             "Core transform/refinement defaults apply when a core method is selected.",
             "A pair's supplied transform takes precedence over registration fitting.",

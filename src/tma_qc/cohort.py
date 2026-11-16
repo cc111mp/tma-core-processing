@@ -40,9 +40,10 @@ class Cohort:
             if uid in self.cores:
                 core = self.cores[uid]
                 group = self.manifest.group(core.group)
+                sample_fit = self.config["illumination"]["mode"] == "basicpy"
                 inputs = {
                     "core": asdict(core),
-                    "group": asdict(group),
+                    "group": {"id": group.id} if sample_fit else asdict(group),
                     "assets": {
                         str(path): self.asset(path)
                         for path in [
@@ -51,7 +52,7 @@ class Cohort:
                             group.darkfield,
                             group.model_metadata,
                         ]
-                        if path
+                        if path and not sample_fit
                     },
                 }
             else:

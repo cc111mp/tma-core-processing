@@ -67,6 +67,19 @@ class Runner:
         self.cohort = None
         self.attempt_id = None
         self.tile_cache_statistics = []
+        self.basicpy_fitter = None
+
+    def fitter(self):
+        """Lazy, run-owned worker: CUDA is initialized once, cores remain serial."""
+        if self.basicpy_fitter is None:
+            from .backends.basicpy import ResidentFitter
+
+            self.basicpy_fitter = ResidentFitter(
+                self.config["illumination"],
+                self.config["runtime"]["read_threads"],
+                self.root / "logs" / ("basicpy-" + self.attempt_id + ".log"),
+            )
+        return self.basicpy_fitter
 
     def summary(self, complete=False):
         return {
@@ -373,4 +386,6 @@ def run_pipeline(
     try:
         return runner.run(selected)
     finally:
+        if runner.basicpy_fitter is not None:
+            runner.basicpy_fitter.close()
         runner.state.close()

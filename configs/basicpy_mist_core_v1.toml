@@ -1,0 +1,35 @@
+# Opt-in core-scoped profile, phomedics-tma-qc 0.5.0. CIDRE remains the default.
+# Set mist_classpath and (when the runner is unqualified) basicpy_python below.
+[runtime]
+read_threads = 8
+
+[illumination]
+mode = "basicpy"
+device = "cuda" # explicitly select "cpu" when needed
+basicpy_python = "" # qualified BaSiCPy 2.0.0 / NumPy 1.26.4 Python executable
+min_tiles_warning = 16
+holdout = "none" # "declared" uses core.illumination_holdout_fov_ids
+
+[illumination.basicpy]
+fitting_mode = "approximate"
+working_size = 128
+get_darkfield = true
+sort_intensity = true
+max_iterations = 500
+max_reweight_iterations = 10
+max_reweight_iterations_baseline = 5
+epsilon = 0.1
+mu_coef = 12.5
+max_mu_coef = 10000000.0
+optimization_tol = 0.001
+optimization_tol_diff = 0.01
+reweighting_tol = 0.01
+rho = 1.5
+sparse_cost_darkfield = 0.01
+
+[geometry]
+backend = "mist"
+input = "corrected"
+downsample = 1
+threads = 8
+mist_classpath = "" # explicit reviewed MIST jars, separated with the OS path separator

@@ -1,0 +1,3 @@
+# Qualified fitter pair; use a separate interpreter when the runner differs.
+basicpy==2.0.0
+numpy==1.26.4

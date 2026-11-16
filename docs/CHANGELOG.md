@@ -1,3 +1,21 @@
+# Version 0.5.0 — 2026-11-16
+
+Adds opt-in `basicpy_mist_core_v1`: fit each core's own raw FOVs with qualified
+BaSiCPy 2.0.0 / NumPy 1.26.4, apply signed unclipped `(I-D)/S`, then native
+corrected-float32 MIST. A resident qualified worker isolates fitting dependencies
+and reuses one CUDA context; verified native pixels are decoded once per core.
+
+Declarative TOML and the explicit workflow extend the existing stage owners.
+Receipts preserve fit membership/settings/source hashes and corrected-geometry
+dependencies. QC distinguishes in-sample residuals, both-held-out photometry,
+partial pairs and limited field identifiability. Landmark QC is geometry-bound.
+Worst overlap/seam records and REVIEW quality states remain required.
+
+CIDRE stays the default. Frozen models, supplied-geometry behavior in legacy
+modes, raw downsample-4/two-thread MIST, blending and raw tile/tissue calculations
+retain their released behavior. This release adds a selectable method, without
+claiming scientific validation or promoting it to the default.
+
 # Version 0.4.1 — 2026-10-22
 
 Repairs reproduced problems in the initial common-error QC paths. Raw TIFF

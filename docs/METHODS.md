@@ -225,3 +225,27 @@ sections. All registered images require review.
 image-quality stages remain REVIEW. Automatic image-quality release is disabled.
 The [research guide](RESEARCH_GUIDE.md) maps review questions to saved stage
 outputs; the [development guide](DEVELOPMENT.md) explains how to extend a method.
+
+## Sample-dependent BaSiCPy and corrected MIST
+
+The opt-in `basicpy_mist_core_v1` profile fits BaSiCPy 2.0.0 using the qualified
+NumPy 1.26.4 runtime on one core's own raw FOVs. The full explicit approximate
+fitting settings are in [the profile](../configs/basicpy_mist_core_v1.toml).
+No autotuning, pooled fit or post-fit output normalization is performed. Native
+fields feed the existing `(I-D)/S` calculation, preserving signed float32 counts.
+Nonpositive fields or upstream failed convergence stop apply.
+
+Corrected-image native MIST uses up to eight threads and estimates one shared
+geometry for raw and corrected mosaics. The alpha-1.5 feather formula, float64
+accumulation, float32 BigTIFF export and coverage maps remain unchanged. Tile
+quality and provisional tissue use raw intensities. H&E fitting remains separate.
+
+Overlap eligibility retains raw correlation >= 0.8 and at least 256 supported
+samples, evaluated at the new positions. A pair used in the fit measures an
+in-sample residual. Both-held-out pairs are independent of illumination fitting;
+one-held-out pairs are partial. All MIST phase residuals remain in-sample.
+Small fits (<16 tiles by default) are labelled `field_identifiability: limited`.
+Gain and exact signal-collapse records help reviewers inspect possible tissue
+absorption. These labels add no automatic acceptance threshold. Worst overlaps,
+seam p95/maxima and tile-pitch harmonics remain required evidence; improving the
+mean or runtime does not establish field accuracy or change the default.

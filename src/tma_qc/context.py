@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+import numpy as np
 
 from .io.coordinates import load_positions
 from .io.tile_cache import TileCache, file_identity
@@ -33,6 +36,9 @@ class Context:
             identities=self.source_identities,
         )
         self.raw_overlaps = OverlapMeasurements()
+        self._stack_temp = self.raw_stack = None
+        self.fitter = None
+        self.timings = {}
 
     def __enter__(self):
         return self
@@ -40,6 +46,33 @@ class Context:
     def __exit__(self, *exc):
         self.tiles.clear()
         self.raw_overlaps.clear()
+        if self.raw_stack is not None:
+            self.raw_stack._mmap.close()
+            self.raw_stack = None
+        if self._stack_temp is not None:
+            self._stack_temp.cleanup()
+
+    def allocate_stack(self):
+        """Decode once into local mapped storage; reuse those native pixels all core long."""
+        from .storage import require_space
+
+        shape = (len(self.core.fovs), *self.config["profile"]["shape"])
+        require_space(
+            [(self.scratch, int(np.prod(shape)) * 2 + 4096, "Decoded core stack")],
+            self.config["storage"],
+        )
+        self.scratch.mkdir(parents=True, exist_ok=True)
+        self._stack_temp = TemporaryDirectory(prefix="core-stack-", dir=self.scratch)
+        self.stack_directory = Path(self._stack_temp.name)
+        self.stack_path = self.stack_directory / "raw.npy"
+        self.raw_stack = np.lib.format.open_memmap(
+            self.stack_path, mode="w+", dtype=np.uint16, shape=shape
+        )
+
+    def retain_stack(self):
+        self.raw_stack.flush()
+        self.raw_stack.flags.writeable = False
+        self.tiles.use_stack(self.raw_stack, self._raw_frames.values())
 
     def asset(self, stage, name):
         """Resolve a named output of an earlier stage for this unit."""
